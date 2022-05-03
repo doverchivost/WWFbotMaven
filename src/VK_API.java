@@ -1,6 +1,10 @@
+import Constants.Constants;
 import InstagramItems.InstagramPost;
 import InstagramItems.InstagramReel;
 import InstagramItems.InstagramStory;
+import Singletons.Vk;
+import com.vk.api.sdk.client.VkApiClient;
+import com.vk.api.sdk.client.actors.UserActor;
 import com.vk.api.sdk.exceptions.ApiException;
 import com.vk.api.sdk.exceptions.ClientException;
 import com.vk.api.sdk.objects.photos.Photo;
@@ -15,13 +19,18 @@ import java.util.List;
 import java.util.TimeZone;
 
 public class VK_API {
+
+    private static VkApiClient vk = Vk.getVk();
+    //private static GroupActor groupActor = Vk.getGroupActor();
+    private static UserActor userActor = Vk.getUserActor();
+
     public static void postStory(InstagramStory story) throws ClientException, ApiException {
         String attachment;
         String user = story.getUser();
         int version = story.getVersion();
         File media = story.getMedia();
         String formattedDate = dateFormat(story.getDate());
-        String caption = "Стори " + user + " (" + formattedDate + ")";
+        String caption = "Стори " + user;
         attachment = postMediaLink(user, version, media, caption, formattedDate);
 
         String postCaption;
@@ -33,7 +42,7 @@ public class VK_API {
             postCaption = "Стори " + user +
                     " (" + formattedDate + ")\n\n" + Constants.other_tags;
         }
-        Bot.vk.wall().post(Bot.userActor).fromGroup(true)
+        vk.wall().post(userActor).fromGroup(true)
                 .ownerId(-Constants.vk_group_id).signed(false)
                 .message(postCaption)
                 .attachments(attachment).execute();
@@ -67,7 +76,7 @@ public class VK_API {
                     + "\n\n" + Constants.other_tags;
 
         }
-        Bot.vk.wall().post(Bot.userActor).fromGroup(true)
+        vk.wall().post(userActor).fromGroup(true)
                 .ownerId(-Constants.vk_group_id).signed(false)
                 .message(postCaption).attachments(attachments).execute();
     }
@@ -75,12 +84,9 @@ public class VK_API {
     public static void postReel(InstagramReel reel) throws ClientException, ApiException {
         String user = reel.getUser();
         String formattedDate = dateFormat(reel.getDate());
-        //int version = reel.getVersion();
-        //File media = reel.getMedia();
         File media = reel.getVideo();
         String message_in_reel = reel.getCaption();
         String caption = "Рилс " + user + ": " + message_in_reel;
-        //String attachment = postMediaLink(user, version, media, caption, formattedDate);
         String attachment = postMediaLink(user, 2, media, caption, formattedDate);
 
         String translatedMessage = message_in_reel; //todo перевод
@@ -95,7 +101,7 @@ public class VK_API {
                     + "\n\n" + Constants.other_tags;
         }
 
-        Bot.vk.wall().post(Bot.userActor).fromGroup(true)
+        vk.wall().post(userActor).fromGroup(true)
                 .ownerId(-Constants.vk_group_id).signed(false)
                 .message(postCaption).attachments(attachment).execute();
     }
@@ -112,12 +118,12 @@ public class VK_API {
                 photoAlbumID = Constants.photo_album_others;
 
             try {
-                String photoInAlbumLink = Bot.vk.photos().getUploadServer(Bot.userActor)
+                String photoInAlbumLink = vk.photos().getUploadServer(userActor)
                         .groupId(Constants.vk_group_id).albumId(photoAlbumID).execute().getUploadUrl();
 
-                PhotoUploadResponse response = Bot.vk.upload().photo(photoInAlbumLink, media).execute();
+                PhotoUploadResponse response = vk.upload().photo(photoInAlbumLink, media).execute();
 
-                List<Photo> photoList = Bot.vk.photos().save(Bot.userActor).photosList(response.getPhotosList())
+                List<Photo> photoList = vk.photos().save(userActor).photosList(response.getPhotosList())
                         .groupId(Constants.vk_group_id).albumId(photoAlbumID)
                         .server(response.getServer()).hash(response.getHash())
                         .caption(caption + "\n\n" + date).execute();
@@ -130,12 +136,12 @@ public class VK_API {
             //video
             try {
                 String nameOfVideo = user + " " + date;
-                String videoLink = Bot.vk.videos().save(Bot.userActor)
+                String videoLink = vk.videos().save(userActor)
                         .name(nameOfVideo).description(caption)
                         .groupId(Constants.vk_group_id).repeat(true)
                         .execute().getUploadUrl();
 
-                VideoUploadResponse response = Bot.vk.upload().video(videoLink, media).execute();
+                VideoUploadResponse response = vk.upload().video(videoLink, media).execute();
                 attachment = Constants.groupVideos + response.getVideoId();
             } catch (ApiException  | ClientException e) {
                 e.printStackTrace();

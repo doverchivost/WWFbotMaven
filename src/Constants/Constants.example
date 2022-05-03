@@ -1,0 +1,45 @@
+package Constants;
+
+        import org.apache.commons.collections4.map.PassiveExpiringMap;
+        import java.io.File;
+        import java.util.Date;
+        import java.util.LinkedHashMap;
+
+public class Constants {
+    //Instagram
+    public static final String instagram_username = "instagram_username";
+    public static final String instagram_password = "instagram_password";
+
+    public static final String main_account_username = "main_account_username";
+    public static final String getMain_account_name = "account_name";
+
+    //Telegram
+    public static final String telegram_bot_token = "telegram_bot_token";
+
+    public static final long[] admin_telegram_ids = new long[] { 123456789, 987654321 };
+
+    //VK
+    public static final String vk_group_token = "vk_group_token";
+    public static final int vk_group_id = 123456789;
+    public static final int photo_album_main = 123456789;
+    public static final int photo_album_others = 987654321;
+
+    public static final String vk_admin_token = "vk_admin_token";
+    public static final int vk_admin_id = 123456789;
+
+    public static final String main_account_tags = "#теги_для_основого_аккаунта";
+    public static final String other_tags = "#теги_для_остальных_аккаунтов";
+
+    public static final String groupPhotos = "photo-" + vk_group_id + "_";
+    public static final String groupVideos = "video-" + vk_group_id +"_";
+
+    public static String sixDigits = "";
+    public static boolean hasDigits = false;
+
+    public static long latestPostPk;
+    public static long latestStoryPk;
+    public static final File storyPkFile = new File("pk\\story.pk");
+    public static final File postPkFile = new File("pk\\post.pk");
+    public static PassiveExpiringMap<Long, Date> story24HoursPk;
+    public static LinkedHashMap<Long, Date> post5latestPk;
+}
