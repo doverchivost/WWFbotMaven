@@ -26,6 +26,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 
@@ -391,17 +392,19 @@ public class INST_API {
     }
 
     private static void downloadUsingStream(String urlStr, String file) {
+        URL url = null;
         try {
-            URL url = new URL(urlStr);
-            BufferedInputStream bis = new BufferedInputStream(url.openStream());
-            FileOutputStream fis = new FileOutputStream(file);
+            url = new URL(urlStr);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        try (BufferedInputStream bis = new BufferedInputStream(url.openStream());
+             FileOutputStream fis = new FileOutputStream(file)) {
             byte[] buffer = new byte[1024];
             int count;
             while ((count = bis.read(buffer, 0, 1024)) != -1) {
                 fis.write(buffer, 0, count);
             }
-            fis.close();
-            bis.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -411,91 +414,3 @@ public class INST_API {
         return 5000 + new Random().nextInt(1000);
     }
 }
-
-
-
-
-
-
-
-
-
-
-   /* public static InstagramReel checkForReelUpdates() throws ClientException, ApiException {
-        List<ReelMedia> reels = getReelsByUserPk(main_account_pk);
-        if (reels == null) return null;
-
-        ArrayList<InstagramReel> notUpdatedReels = new ArrayList<>();
-        int reelsAmount = 3;
-        if (reels.size() < 4) reelsAmount = reels.size()-1;
-
-        for (int i = reelsAmount; i >= 0; i--) {
-            ReelMedia currentReel = reels.get(i);
-            if (!Bot.reel5latestPk.containsKey(currentReel.getPk())) {
-                InstagramReel newReel = createInstagramReel(currentReel);
-                notUpdatedReels.add(newReel);
-                Bot.reel5latestPk.put(newReel.getPk(), newReel.getDate());
-                Bot.post5latestPk.put(newReel.getPk(), newReel.getDate());
-            }
-        }
-        if (notUpdatedReels.size() >= 1) {
-            for (int i = 0; i < notUpdatedReels.size() - 1; i++)
-                VK_API.postReel(notUpdatedReels.get(i));
-            return notUpdatedReels.get(notUpdatedReels.size() - 1);
-        }
-
-        return null;
-    }*/
-        /*private static List<ReelMedia> getReelsByUserPk(long pk) {
-        System.out.println("Method: getReelsByUserPk");
-        IGRequest request = new FeedUserReelMediaRequest(pk);
-        FeedUserReelsMediaResponse response = (FeedUserReelsMediaResponse) sendRequest(request);
-        if (response.getReel() != null && !response.getReel().getItems().isEmpty())
-            return response.getReel().getItems();
-        return null;
-    }*/
-//    private static InstagramStory getInstagramStory(String username, String storyCode) {
-//        System.out.println("Method: createInstagramStory - beginning");
-//        long userPk = getUserPk(username);
-//        List<ReelMedia> reels = getStoriesByUserPk(userPk);
-//        System.out.println("Method: createInstagramStory - ending");
-//        for (ReelMedia reel : reels) {
-//            String pk = Long.toString(reel.getPk());
-//            if (pk.equals(storyCode)) return createInstagramStory(reel);
-//        }
-//        return null;
-//    }
-//   private static InstagramReel createInstagramReel(ReelMedia reel) {
-//       InstagramReel instReel = new InstagramReel();
-//       instReel.setDate(reel.getTaken_at());
-//       long pk = reel.getPk();
-//       instReel.setPk(pk);
-//       instReel.setUser(reel.getUser().getUsername());
-//       int mediaType = Integer.parseInt(reel.getMedia_type());
-//       //instReel.set(mediaType);
-//       try {
-//           if (mediaType == 2) {
-//               //video
-//               ReelVideoMedia reelVideo = ((ReelVideoMedia) reel);
-//               String url = reelVideo.getVideo_versions().get(0).getUrl();
-//               instReel.setVideo(convertURLintoFILE(url, reel.getCode(), 2));
-//           }
-//           else {
-//               System.out.println("UKNOWN MEDIA VERSION IN REELS");
-//           }
-//       }
-//       catch (ClassCastException e) {
-//           System.out.println("Wrong casting in story!");
-//           e.printStackTrace();
-//       }
-//       System.out.println("Method: getInstagramStory - ending");
-//       return instReel;
-//   }
-
-//    public static InstagramStory getUserStoryByLink(String link) {
-//        String[] str = link.split("/");
-//        String username = str[4];
-//        String storyCode = link.split("/")[5].split("\\?")[0];
-//        System.out.println("Method: getUserStoryByLink");
-//        return getInstagramStory(username, storyCode);
-//    }

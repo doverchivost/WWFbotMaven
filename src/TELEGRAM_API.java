@@ -145,7 +145,6 @@ public class TELEGRAM_API {
             } catch (ClientException | ApiException e) {
                 e.printStackTrace();
             } finally {
-                //reel.getMedia().delete();
                 reel.getVideo().delete();
             }
             answer = "reel posted on vk";
