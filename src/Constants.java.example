@@ -1,0 +1,27 @@
+public class Constants1 {
+    //Instagram
+    static String instagram_username = "instagram_username";
+    static String instagram_password = "instagram_password";
+
+    static String main_account_username = "main_account_username";
+    static String getMain_account_name = "account_name";
+
+    //Telegram
+    static String telegram_bot_token = "telegram_bot_token";
+    static long[] admin_telegram_ids = new long[] { 123456789, 987654321 };
+
+    //VK
+    static String vk_group_token = "vk_group_token";
+    static int vk_group_id = 123456789;
+
+    static String vk_admin_token = "vk_admin_token";
+    static int vk_admin_id = 123456789;
+
+    static String main_account_tags = "#теги_для_основного_аккаунта";
+    static String other_tags = "#теги_для_остальных_аккаунтов";
+    static int photo_album_main = 123456789;
+    static int photo_album_others = 987654321;
+
+    static String groupPhotos = "photo-" + vk_group_id + "_";
+    static String groupVideos = "video-" + vk_group_id +"_";
+}
