@@ -64,7 +64,9 @@ public class VK_API {
             attachments.add(postMediaLink(user, currentMediaVersion, currentMedia, caption, formattedDate));
         }
 
-        String translatedMessage = message_in_post; //todo перевод
+        String translatedMessage = message_in_post;
+        if (message_in_post.length() > 1 )
+            translatedMessage = NaverTranslator.translateText(message_in_post).replace("\\n", "\n");
 
         String postCaption;
         if (user.equals(Constants.main_account_username)) {
@@ -89,7 +91,9 @@ public class VK_API {
         String caption = "Рилс " + user + ": " + message_in_reel;
         String attachment = postMediaLink(user, 2, media, caption, formattedDate);
 
-        String translatedMessage = message_in_reel; //todo перевод
+        String translatedMessage = message_in_reel;
+        if (translatedMessage.length() > 1)
+            translatedMessage = NaverTranslator.translateText(message_in_reel).replace("\\n", "\n");;
 
         String postCaption;
         if (user.equals(Constants.main_account_username)) {
