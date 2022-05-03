@@ -1,6 +1,9 @@
+import Constants.Constants;
 import InstagramItems.InstagramPost;
 import InstagramItems.InstagramReel;
 import InstagramItems.InstagramStory;
+import Singletons.Instagram;
+import com.github.instagram4j.instagram4j.IGClient;
 import com.github.instagram4j.instagram4j.models.media.reel.ReelImageMedia;
 import com.github.instagram4j.instagram4j.models.media.reel.ReelMedia;
 import com.github.instagram4j.instagram4j.models.media.reel.ReelVideoMedia;
@@ -29,6 +32,7 @@ import java.util.*;
 public class INST_API {
 
     private static long main_account_pk = 0;
+    private static IGClient instagram = Instagram.getInstagram();
 
     public static void start() {
         System.out.println("Method: start - beginning");
@@ -42,24 +46,26 @@ public class INST_API {
             int postCount = 4;
             if (posts.size() < 5) postCount = posts.size() - 1;
             for (int i = postCount; i >= 0; i--)
-                Bot.post5latestPk.put(posts.get(i).getPk(), new Date());
-            Bot.latestPostPk = posts.get(0).getPk();
+                Constants.post5latestPk.put(posts.get(i).getPk(), new Date());
+            Constants.latestPostPk = posts.get(0).getPk();
         } else {
-            Bot.latestPostPk = 0;
-            Bot.post5latestPk.put(Bot.latestPostPk, new Date());
+            Constants.latestPostPk = 0;
+            Constants.post5latestPk.put(Constants.latestPostPk, new Date());
         }
         
-        if (Bot.latestPostPk != 0) Bot.post5latestPk.put(Bot.latestPostPk, new Date());
+        if (Constants.latestPostPk != 0)
+            Constants.post5latestPk.put(Constants.latestPostPk, new Date());
 
         List<ReelMedia> stories = getStoriesByUserPk(main_account_pk);
         if (stories != null) {
             for (ReelMedia story : stories)
-                Bot.story24HoursPk.put(story.getPk(), new Date(story.getTaken_at() * 1000));
-            Bot.latestStoryPk = stories.get(stories.size() - 1).getPk();
+                Constants.story24HoursPk.put(story.getPk(), new Date(story.getTaken_at() * 1000));
+            Constants.latestStoryPk = stories.get(stories.size() - 1).getPk();
         } else
-            Bot.latestStoryPk = 0;
+            Constants.latestStoryPk = 0;
 
-        if (Bot.latestStoryPk != 0) Bot.story24HoursPk.put(Bot.latestStoryPk, new Date());
+        if (Constants.latestStoryPk != 0)
+            Constants.story24HoursPk.put(Constants.latestStoryPk, new Date());
 
         System.out.println("Method: start - ending");
     }
@@ -102,10 +108,10 @@ public class INST_API {
 
         for (int i = postsAmount; i >= 0; i--) {
             TimelineMedia currentPost = posts.get(i);
-            if (!Bot.post5latestPk.containsKey(currentPost.getPk())) {
+            if (!Constants.post5latestPk.containsKey(currentPost.getPk())) {
                 InstagramPost newPost = createInstagramPost(currentPost);
                 notUpdatedPosts.add(newPost);
-                Bot.post5latestPk.put(newPost.getPk(), newPost.getDate());
+                Constants.post5latestPk.put(newPost.getPk(), newPost.getDate());
             }
         }
         System.out.println("Method: checkForPostUpdates - ending");
@@ -120,16 +126,17 @@ public class INST_API {
 
     public static InstagramStory checkForStoryUpdates() throws ClientException, ApiException {
         System.out.println("Method: checkForStoryUpdates");
-        if (Bot.story24HoursPk.isEmpty()) Bot.story24HoursPk.put(Bot.latestStoryPk, new Date());
+        if (Constants.story24HoursPk.isEmpty())
+            Constants.story24HoursPk.put(Constants.latestStoryPk, new Date());
         List<ReelMedia> stories = getStoriesByUserPk(main_account_pk);
         ArrayList<InstagramStory> notUpdatedStories = new ArrayList<>();
         if (stories == null) return null;
 
         for (int i = 0; i < stories.size(); i++) {
             long currentStoryPk = stories.get(i).getPk();
-            if (!Bot.story24HoursPk.containsKey(currentStoryPk)) {
+            if (!Constants.story24HoursPk.containsKey(currentStoryPk)) {
                 InstagramStory currentStory = createInstagramStory(stories.get(i));
-                Bot.story24HoursPk.put(currentStoryPk, currentStory.getDate());
+                Constants.story24HoursPk.put(currentStoryPk, currentStory.getDate());
                 notUpdatedStories.add(currentStory);
             }
         }
@@ -252,7 +259,7 @@ public class INST_API {
         return story;
     }
 
-    public static InstagramPost getUserPostByLink(String link) throws IOException {
+    public static InstagramPost getUserPostByLink(String link) {
         String postCode = link.split("/")[4];
         System.out.println("Method: getUserPostByLink - response");
         IGRequest request =  new MediaInfoRequest(IGUtils.fromCode(postCode) + "");
@@ -358,13 +365,13 @@ public class INST_API {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            response = request.execute(Bot.instagram).join();//Bot.instagram.sendRequest(request).join();
+            response = request.execute(instagram).join();//Bot.instagram.sendRequest(request).join();
             status = response.getStatusCode();
 
             counter++;
             if (counter > 50) {
                 System.out.println("TOO MUCH");
-                Bot.notifyAdmins("Проблема с получением ответов от инстаграма. Я отключаюсь.");
+                TELEGRAM_API.notifyAdmins("Проблема с получением ответов от инстаграма. Я отключаюсь.");
                 System.exit(-1);
             }
         }
@@ -389,7 +396,7 @@ public class INST_API {
             BufferedInputStream bis = new BufferedInputStream(url.openStream());
             FileOutputStream fis = new FileOutputStream(file);
             byte[] buffer = new byte[1024];
-            int count = 0;
+            int count;
             while ((count = bis.read(buffer, 0, 1024)) != -1) {
                 fis.write(buffer, 0, count);
             }
