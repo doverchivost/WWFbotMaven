@@ -66,7 +66,7 @@ public class VK_API {
 
         String translatedMessage = message_in_post;
         if (message_in_post.length() > 1 )
-            translatedMessage = NaverTranslator.translateText(message_in_post).replace("\\n", "\n");
+            translatedMessage = Translator.translateTextToRussian(message_in_post).replace("\\n", "\n");
 
         String postCaption;
         if (user.equals(Constants.main_account_username)) {
@@ -93,7 +93,7 @@ public class VK_API {
 
         String translatedMessage = message_in_reel;
         if (translatedMessage.length() > 1)
-            translatedMessage = NaverTranslator.translateText(message_in_reel).replace("\\n", "\n");;
+            translatedMessage = Translator.translateTextToRussian(message_in_reel).replace("\\n", "\n");;
 
         String postCaption;
         if (user.equals(Constants.main_account_username)) {

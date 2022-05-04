@@ -5,60 +5,96 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
-public class NaverTranslator {
+public class Translator {
 
     private static final String clientId = Constants.clientId;
     private static final String clientSecret = Constants.clientSecret;
 
-    public static String translateText(String text) {
-        String lang = detectLanguage(text);
-        return translate(text, lang, "ru").replace("\\n", "\n");
+    public static String translateTextToRussian(String text) {
+        if (text.length() <= 1) return text;
+        String detectedLanguage = detectLanguageNaver(text);
+        if (detectedLanguage.equals("ru")) return text;
+        String translatedText = "";
+        translatedText = translateSplittedText(text.replace("\n", " \\n "), detectedLanguage)
+                .replace("\\n", "\n");
+        return translatedText;
     }
 
-    private static String detectLanguage(String msg) {
-        String query;
-        try {
-            query = URLEncoder.encode(msg, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("인코딩 실패", e);
+    private static String translateSplittedText(String text, String detectedLanguage) {
+        if (text.length() <= 1) return text;
+        if (detectedLanguage.equals("ko") || detectedLanguage.equals("ja")) {
+            String fromNaver = translateNaver(detectedLanguage, "en", text);
+            if (fromNaver != null) {
+                String fromNaverToGoogle = translateGoogle("en", "ru", fromNaver);
+                return fromNaverToGoogle;
+            }
         }
+        String fromGoogle = translateGoogle(detectedLanguage, "ru", text);
+        if (fromGoogle.charAt(0) != '<')
+            return fromGoogle;
+        fromGoogle = translateGoogle("", "ru", text);
+        return fromGoogle;
+    }
+
+    private static String translateGoogle(String langFrom, String langTo, String text)  {
+        if (langFrom.equals(langTo)) return text;
+        StringBuilder response = new StringBuilder();
+        try {
+            String urlStr = Constants.googleScriptUrl +
+                    "?q=" + URLEncoder.encode(text, StandardCharsets.UTF_8) +
+                    "&target=" + langTo +
+                    "&source=" + langFrom;
+            URL url = new URL(urlStr);
+
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setRequestProperty("User-Agent", "Mozilla/5.0");
+            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+        return response.toString();
+    }
+
+    private static String translateNaver(String langFrom, String langTo, String text) {
+        if (langFrom.equals(langTo)) return text;
+        String apiURL = "https://openapi.naver.com/v1/papago/n2mt";
+        text = URLEncoder.encode(text, StandardCharsets.UTF_8);
+
+        Map<String, String> requestHeaders = new HashMap<>();
+        requestHeaders.put("X-Naver-Client-Id", clientId);
+        requestHeaders.put("X-Naver-Client-Secret", clientSecret);
+
+        String responseBody = postNaverTranslate(apiURL, requestHeaders, text, langFrom, langTo);
+        //System.out.println(responseBody);
+        if (responseBody.split("\"").length > 15)
+            return responseBody.split("\"")[15];
+        return null;
+    }
+
+    private static String detectLanguageNaver(String msg) {
+        String query;
+        query = URLEncoder.encode(msg, StandardCharsets.UTF_8);
         String apiURL = "https://openapi.naver.com/v1/papago/detectLangs";
 
         Map<String, String> requestHeaders = new HashMap<>();
         requestHeaders.put("X-Naver-Client-Id", clientId);
         requestHeaders.put("X-Naver-Client-Secret", clientSecret);
 
-        String responseBody = postDetect(apiURL, requestHeaders, query);
+        String responseBody = postNaverDetect(apiURL, requestHeaders, query);
         return responseBody.split("\"")[3];
     }
 
-    private static String translate(String msg, String langFrom, String langTo) {
-        String apiURL = "https://openapi.naver.com/v1/papago/n2mt";
-        String text;
-        try {
-            text = URLEncoder.encode(msg, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("인코딩 실패", e);
-        }
-
-        Map<String, String> requestHeaders = new HashMap<>();
-        requestHeaders.put("X-Naver-Client-Id", clientId);
-        requestHeaders.put("X-Naver-Client-Secret", clientSecret);
-
-        String responseBody = postTranslate(apiURL, requestHeaders, text, langFrom, langTo);
-        System.out.println(responseBody);
-        if (responseBody.split("\"").length > 15)
-            return responseBody.split("\"")[15];
-        else if (langTo.equals("ru"))
-            return translate(translate(msg, langFrom, "en"), "en", langTo);
-        else
-            return translate(translate(msg, langFrom, "ko"), "ko", langTo);
-    }
-
-    private static String postTranslate(String apiUrl, Map<String, String> requestHeaders, String text, String langFrom, String langTo){
+    private static String postNaverTranslate(String apiUrl, Map<String, String> requestHeaders, String text, String langFrom, String langTo){
         HttpURLConnection con = connect(apiUrl);
         String postParams = "source=" + langFrom + "&target=" + langTo + "&text=" + text;
         try {
@@ -86,7 +122,7 @@ public class NaverTranslator {
         }
     }
 
-    private static String postDetect(String apiUrl, Map<String, String> requestHeaders, String text){
+    private static String postNaverDetect(String apiUrl, Map<String, String> requestHeaders, String text){
         HttpURLConnection con = connect(apiUrl);
         String postParams =  "query="  + text; //원본언어: 한국어 (ko) -> 목적언어: 영어 (en)
         try {
@@ -127,15 +163,12 @@ public class NaverTranslator {
 
     private static String readBody(InputStream body){
         InputStreamReader streamReader = new InputStreamReader(body);
-
         try (BufferedReader lineReader = new BufferedReader(streamReader)) {
             StringBuilder responseBody = new StringBuilder();
-
             String line;
             while ((line = lineReader.readLine()) != null) {
                 responseBody.append(line);
             }
-
             return responseBody.toString();
         } catch (IOException e) {
             throw new RuntimeException("API 응답을 읽는데 실패했습니다.", e);

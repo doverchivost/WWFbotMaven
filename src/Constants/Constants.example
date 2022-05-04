@@ -46,4 +46,7 @@ public class Constants {
     //Papago
     public static final String clientId = "clientId";
     public static final String clientSecret = "clientSecret";
+
+    //Google Scripts
+    public static final String googleScriptUrl = "https://script.google.com/macros/s/...";
 }
