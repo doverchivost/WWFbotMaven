@@ -1,4 +1,5 @@
 import Constants.Constants;
+import InstagramItems.InstagramItem;
 import InstagramItems.InstagramPost;
 import InstagramItems.InstagramReel;
 import InstagramItems.InstagramStory;
@@ -6,7 +7,13 @@ import Singletons.Telegram;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.model.Update;
+import com.pengrad.telegrambot.model.request.InputMedia;
+import com.pengrad.telegrambot.model.request.InputMediaPhoto;
+import com.pengrad.telegrambot.model.request.InputMediaVideo;
+import com.pengrad.telegrambot.request.SendMediaGroup;
 import com.pengrad.telegrambot.request.SendMessage;
+import com.pengrad.telegrambot.request.SendPhoto;
+import com.pengrad.telegrambot.request.SendVideo;
 import com.vk.api.sdk.exceptions.ApiException;
 import com.vk.api.sdk.exceptions.ClientException;
 
@@ -19,6 +26,7 @@ public class TELEGRAM_API {
     public static void telegramAddListener() {
         bot.setUpdatesListener(updates -> {
             for (Update update : updates) {
+                if (update.message() == null) continue;
                 String answer = "";
                 long chatId = update.message().chat().id();
                 boolean is_admin = false;
@@ -94,11 +102,67 @@ public class TELEGRAM_API {
         return answer;
     }
 
+    private static void sendMessageToChannel(InstagramItem item) {
+        String className = item.getClass().getSimpleName();
+        String user = item.getUser();
+        String date = VK_API.dateFormat(item.getDate());
+
+        if (className.equals("InstagramPost")) {
+            InstagramPost instagramPost = ((InstagramPost) item);
+            String caption = instagramPost.getCaption();
+            String translated = Translator.translateTextToRussian(caption);
+            int[] versions = instagramPost.getVersions();
+            int count = instagramPost.getMediaCount();
+            String msg = "Пост " + user + "\n\n"
+                    + caption + "\n\n" +
+                    "Перевод: " + "\n\n" + translated +
+                    "\n\n" + date;
+            if (count == 1) {
+                if (versions[0] == 1)
+                    bot.execute(new SendPhoto(Constants.channelId, instagramPost.getMedia()[0]).caption(msg));
+                else if (versions[0] == 2)
+                    bot.execute(new SendVideo(Constants.channelId, instagramPost.getMedia()[0]).caption(msg));
+            }
+            else {
+                InputMedia[] media = new InputMedia[count];
+                for (int i = 0; i < count; i ++) {
+                    if (versions[i] == 1)
+                        media[i] = new InputMediaPhoto(instagramPost.getMedia()[i]);
+                    else if (versions[i] == 2)
+                        media[i] = new InputMediaVideo(instagramPost.getMedia()[i]);
+                }
+                bot.execute(new SendMediaGroup(Constants.channelId, media));
+                bot.execute(new SendMessage(Constants.channelId, msg));
+            }
+        }
+        else if (className.equals("InstagramStory")) {
+            InstagramStory instagramStory = ((InstagramStory) item);
+            int version = instagramStory.getVersion();
+            String msg = "Стори " + user + "\n\n" + date;
+            if (version == 1)
+                bot.execute(new SendPhoto(Constants.channelId, instagramStory.getMedia()).caption(msg));
+            else if (version == 2) {
+                bot.execute(new SendVideo(Constants.channelId, instagramStory.getMedia()).caption(msg));
+            }
+        }
+        else if (className.equals("InstagramReel")) {
+            InstagramReel instagramReel = ((InstagramReel) item);
+            String caption = instagramReel.getCaption();
+            String translated = Translator.translateTextToRussian(caption);
+            String msg = "Рил " + user + "\n\n"
+                    + caption + "\n\n" +
+                    "Перевод: " + "\n\n" + translated +
+                    "\n\n" + date;
+            bot.execute(new SendVideo(Constants.channelId, instagramReel.getVideo()).caption(msg));
+        }
+    }
+
     public static String postingPostNotification (InstagramPost post)  {
         String answer;
         if (post.getUser() != null) {
             //пуюликуем пост в вк и удаляем файлы
             try {
+                sendMessageToChannel(post);
                 VK_API.postPost(post);
             } catch (ClientException | ApiException e) {
                 e.printStackTrace();
@@ -107,7 +171,7 @@ public class TELEGRAM_API {
                 for (File f : post.getMedia())
                     f.delete();
             }
-            answer = "post posted on vk";
+            answer = "post posted on vk and channel";
         }
         else {
             answer = "Null Pointer Exception >_<";
@@ -121,13 +185,14 @@ public class TELEGRAM_API {
         if (story.getUser() != null) {
             //публикуем стори в вк и уадляем файлы
             try {
+                sendMessageToChannel(story);
                 VK_API.postStory(story);
             } catch (ClientException | ApiException e) {
                 e.printStackTrace();
             } finally {
                 story.getMedia().delete();
             }
-            answer = "story posted on vk";
+            answer = "story posted on vk and channel";
         }
         else {
             answer = "Null Pointer Exception >_<";
@@ -141,13 +206,14 @@ public class TELEGRAM_API {
         if (reel.getUser() != null) {
             //публикуем рил в вк и уадляем файлы
             try {
+                sendMessageToChannel(reel);
                 VK_API.postReel(reel);
             } catch (ClientException | ApiException e) {
                 e.printStackTrace();
             } finally {
                 reel.getVideo().delete();
             }
-            answer = "reel posted on vk";
+            answer = "reel posted on vk and channel";
         }
         else {
             answer = "Null Pointer Exception >_<";

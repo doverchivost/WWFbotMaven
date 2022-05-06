@@ -15,6 +15,7 @@ public class Constants {
 
     //Telegram
     public static final String telegram_bot_token = "telegram_bot_token";
+    public static final long channelId = -1000000000L;
 
     public static final long[] admin_telegram_ids = new long[] { 123456789, 987654321 };
 

@@ -118,7 +118,7 @@ public class INST_API {
         System.out.println("Method: checkForPostUpdates - ending");
         if (notUpdatedPosts.size() >= 1) {
             for (int i = 0; i < notUpdatedPosts.size() - 1; i++)
-                VK_API.postPost(notUpdatedPosts.get(i));
+                TELEGRAM_API.postingPostNotification(notUpdatedPosts.get(i));//VK_API.postPost(notUpdatedPosts.get(i));
             return notUpdatedPosts.get(notUpdatedPosts.size()-1);
         }
 
@@ -144,7 +144,7 @@ public class INST_API {
         System.out.println("Method: checkForStoryUpdates - ending");
         if (notUpdatedStories.size() >= 1) {
             for (int i = 0; i < notUpdatedStories.size() - 1; i++)
-                VK_API.postStory(notUpdatedStories.get(i));
+                TELEGRAM_API.postingStoryNotification(notUpdatedStories.get(i));//VK_API.postStory(notUpdatedStories.get(i));
             return notUpdatedStories.get(notUpdatedStories.size()-1);
         }
 

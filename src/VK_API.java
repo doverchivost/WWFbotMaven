@@ -154,7 +154,7 @@ public class VK_API {
         return attachment;
     }
 
-    private static String dateFormat (Date date) {
+    public static String dateFormat (Date date) {
         SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm z");
         format.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
         return format.format(date);
