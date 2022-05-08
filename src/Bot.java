@@ -60,7 +60,6 @@ public class Bot {
         @Override
         public void run() {
             int delay = (180 + new Random().nextInt(420)) * 1000;
-            //for test int delay = (10 + new Random().nextInt(50)) * 1000;
             timerPosts.schedule(new TaskPostsCheck(), delay);
             Updater.postUpdater();
         }
@@ -70,7 +69,6 @@ public class Bot {
         @Override
         public void run() {
             int delay = (100 + new Random().nextInt(400)) * 1000;
-            //for test int delay = (10 + new Random().nextInt(50)) * 1000;
             timerStories.schedule(new TaskStoriesCheck(), delay);
             Updater.storyUpdater();
         }

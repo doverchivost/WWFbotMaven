@@ -29,7 +29,7 @@ public class VK_API {
         String user = story.getUser();
         int version = story.getVersion();
         File media = story.getMedia();
-        String formattedDate = dateFormat(story.getDate());
+        String formattedDate = Constants.dateFormat(story.getDate());
         String caption = "Стори " + user;
         attachment = postMediaLink(user, version, media, caption, formattedDate);
 
@@ -51,7 +51,7 @@ public class VK_API {
     public static void postPost(InstagramPost post) throws ClientException, ApiException {
         List<String> attachments =  new ArrayList<>();
         String user = post.getUser();
-        String formattedDate = dateFormat(post.getDate());
+        String formattedDate = Constants.dateFormat(post.getDate());
         int counter = post.getMediaCount();
         int[] versions = post.getVersions();
         File[] medias = post.getMedia();
@@ -85,7 +85,7 @@ public class VK_API {
 
     public static void postReel(InstagramReel reel) throws ClientException, ApiException {
         String user = reel.getUser();
-        String formattedDate = dateFormat(reel.getDate());
+        String formattedDate = Constants.dateFormat(reel.getDate());
         File media = reel.getVideo();
         String message_in_reel = reel.getCaption();
         String caption = "Рилс " + user + ": " + message_in_reel;
@@ -152,11 +152,5 @@ public class VK_API {
             }
         }
         return attachment;
-    }
-
-    public static String dateFormat (Date date) {
-        SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm z");
-        format.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
-        return format.format(date);
     }
 }

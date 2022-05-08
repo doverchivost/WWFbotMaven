@@ -39,7 +39,9 @@ public class TELEGRAM_API {
                 //обрабатываем сообщения только от админов сообщества в ВК
                 if (is_admin) {
                     String message = update.message().text().trim();
-                    if (message.equals("/story")) Updater.storyUpdater();
+
+                    if (message.equals("/start")) answer = "Добро пожаловать, админ группы!";
+                    else if (message.equals("/story")) Updater.storyUpdater();
                     else if (message.equals("/post")) Updater.postUpdater();
                     else if (Pattern.matches("[0-9][0-9][0-9][0-9][0-9][0-9]", message)) {
                         Constants.sixDigits = message;
@@ -105,7 +107,7 @@ public class TELEGRAM_API {
     private static void sendMessageToChannel(InstagramItem item) {
         String className = item.getClass().getSimpleName();
         String user = item.getUser();
-        String date = VK_API.dateFormat(item.getDate());
+        String date = Constants.dateFormat(item.getDate());
 
         if (className.equals("InstagramPost")) {
             InstagramPost instagramPost = ((InstagramPost) item);
@@ -160,7 +162,7 @@ public class TELEGRAM_API {
     public static String postingPostNotification (InstagramPost post)  {
         String answer;
         if (post.getUser() != null) {
-            //пуюликуем пост в вк и удаляем файлы
+            //пуюликуем пост в канал и вк и удаляем файлы
             try {
                 sendMessageToChannel(post);
                 VK_API.postPost(post);
@@ -171,7 +173,7 @@ public class TELEGRAM_API {
                 for (File f : post.getMedia())
                     f.delete();
             }
-            answer = "post posted on vk and channel";
+            answer = Constants.successPost;
         }
         else {
             answer = "Null Pointer Exception >_<";
@@ -183,7 +185,7 @@ public class TELEGRAM_API {
     public static String postingStoryNotification (InstagramStory story) {
         String answer;
         if (story.getUser() != null) {
-            //публикуем стори в вк и уадляем файлы
+            //публикуем стори в канал и вк и уадляем файлы
             try {
                 sendMessageToChannel(story);
                 VK_API.postStory(story);
@@ -192,7 +194,7 @@ public class TELEGRAM_API {
             } finally {
                 story.getMedia().delete();
             }
-            answer = "story posted on vk and channel";
+            answer = Constants.successStory;
         }
         else {
             answer = "Null Pointer Exception >_<";
@@ -204,7 +206,7 @@ public class TELEGRAM_API {
     public static String postingReelNotification (InstagramReel reel) {
         String answer;
         if (reel.getUser() != null) {
-            //публикуем рил в вк и уадляем файлы
+            //публикуем рил в канал и вк и уадляем файлы
             try {
                 sendMessageToChannel(reel);
                 VK_API.postReel(reel);
@@ -213,7 +215,7 @@ public class TELEGRAM_API {
             } finally {
                 reel.getVideo().delete();
             }
-            answer = "reel posted on vk and channel";
+            answer = Constants.successReel;
         }
         else {
             answer = "Null Pointer Exception >_<";

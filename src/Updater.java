@@ -17,7 +17,7 @@ public class Updater {
                 Constants.latestStoryPk = newStory.getPk();
                 rewritePkFile(Constants.latestStoryPk, Constants.storyPkFile);
                 String msg = TELEGRAM_API.postingStoryNotification(newStory);
-                if (msg.equals("story posted on vk"))
+                if (msg.equals(Constants.successStory))
                     msg = "Недавно опубликованная стори пользователя уже добавлена в группу!";
                 else
                     msg = "На проверке новых сториз:\n\n" + msg;
@@ -36,7 +36,7 @@ public class Updater {
                 Constants.latestPostPk = newPost.getPk();
                 rewritePkFile(Constants.latestPostPk, Constants.postPkFile);
                 String msg = TELEGRAM_API.postingPostNotification(newPost);
-                if (msg.equals("post posted on vk"))
+                if (msg.equals(Constants.successPost))
                     msg = "Недавно опубликованный пост пользователя уже добавлен в группу!";
                 else
                     msg = "На проверке новых постов:\n\n" + msg;

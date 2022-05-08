@@ -18,26 +18,17 @@ public class Translator {
         if (text.length() <= 1) return text;
         String detectedLanguage = detectLanguageNaver(text);
         if (detectedLanguage.equals("ru")) return text;
-        String translatedText = "";
-        translatedText = translateSplittedText(text.replace("\n", " \\n "), detectedLanguage)
-                .replace("\\n", "\n");
-        return translatedText;
-    }
 
-    private static String translateSplittedText(String text, String detectedLanguage) {
-        if (text.length() <= 1) return text;
-        if (detectedLanguage.equals("ko") || detectedLanguage.equals("ja")) {
-            String fromNaver = translateNaver(detectedLanguage, "en", text);
-            if (fromNaver != null) {
-                String fromNaverToGoogle = translateGoogle("en", "ru", fromNaver);
-                return fromNaverToGoogle;
-            }
-        }
+        String translatedText = "";
+
+        text = text.replace("\n", "\\n");
         String fromGoogle = translateGoogle(detectedLanguage, "ru", text);
         if (fromGoogle.charAt(0) != '<')
-            return fromGoogle;
-        fromGoogle = translateGoogle("", "ru", text);
-        return fromGoogle;
+            translatedText = fromGoogle;
+        else
+            translatedText = translateGoogle("", "ru", text);
+
+        return translatedText.replace("\\n", "\n");
     }
 
     private static String translateGoogle(String langFrom, String langTo, String text)  {
