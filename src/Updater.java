@@ -25,6 +25,7 @@ public class Updater {
             }
         }
         catch (ClientException | ApiException e) {
+            TELEGRAM_API.notifyAdmins("Ошибка при проерке на наличие новых сториз");
             e.printStackTrace();
         }
     }
@@ -44,6 +45,7 @@ public class Updater {
             }
         }
         catch (ClientException | ApiException e) {
+            TELEGRAM_API.notifyAdmins("Ошибка при проерке на наличие новых постов");
             e.printStackTrace();
         }
     }

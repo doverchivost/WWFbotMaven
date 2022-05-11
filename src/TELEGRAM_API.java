@@ -109,53 +109,54 @@ public class TELEGRAM_API {
         String user = item.getUser();
         String date = Constants.dateFormat(item.getDate());
 
-        if (className.equals("InstagramPost")) {
-            InstagramPost instagramPost = ((InstagramPost) item);
-            String caption = instagramPost.getCaption();
-            String translated = Translator.translateTextToRussian(caption);
-            int[] versions = instagramPost.getVersions();
-            int count = instagramPost.getMediaCount();
-            String msg = "Пост " + user + "\n\n"
-                    + caption + "\n\n" +
-                    "Перевод: " + "\n\n" + translated +
-                    "\n\n" + date;
-            if (count == 1) {
-                if (versions[0] == 1)
-                    bot.execute(new SendPhoto(Constants.channelId, instagramPost.getMedia()[0]).caption(msg));
-                else if (versions[0] == 2)
-                    bot.execute(new SendVideo(Constants.channelId, instagramPost.getMedia()[0]).caption(msg));
-            }
-            else {
-                InputMedia[] media = new InputMedia[count];
-                for (int i = 0; i < count; i ++) {
-                    if (versions[i] == 1)
-                        media[i] = new InputMediaPhoto(instagramPost.getMedia()[i]);
-                    else if (versions[i] == 2)
-                        media[i] = new InputMediaVideo(instagramPost.getMedia()[i]);
+        switch (className) {
+            case "InstagramPost" -> {
+                InstagramPost instagramPost = ((InstagramPost) item);
+                String caption = instagramPost.getCaption();
+                String translated = Translator.translateTextToRussian(caption);
+                int[] versions = instagramPost.getVersions();
+                int count = instagramPost.getMediaCount();
+                String msg = "Пост " + user + "\n\n"
+                        + caption + "\n\n" +
+                        "Перевод: " + "\n\n" + translated +
+                        "\n\n" + date;
+                if (count == 1) {
+                    if (versions[0] == 1)
+                        bot.execute(new SendPhoto(Constants.channelId, instagramPost.getMedia()[0]).caption(msg));
+                    else if (versions[0] == 2)
+                        bot.execute(new SendVideo(Constants.channelId, instagramPost.getMedia()[0]).caption(msg));
+                } else {
+                    InputMedia[] media = new InputMedia[count];
+                    for (int i = 0; i < count; i++) {
+                        if (versions[i] == 1)
+                            media[i] = new InputMediaPhoto(instagramPost.getMedia()[i]);
+                        else if (versions[i] == 2)
+                            media[i] = new InputMediaVideo(instagramPost.getMedia()[i]);
+                    }
+                    bot.execute(new SendMediaGroup(Constants.channelId, media));
+                    bot.execute(new SendMessage(Constants.channelId, msg));
                 }
-                bot.execute(new SendMediaGroup(Constants.channelId, media));
-                bot.execute(new SendMessage(Constants.channelId, msg));
             }
-        }
-        else if (className.equals("InstagramStory")) {
-            InstagramStory instagramStory = ((InstagramStory) item);
-            int version = instagramStory.getVersion();
-            String msg = "Стори " + user + "\n\n" + date;
-            if (version == 1)
-                bot.execute(new SendPhoto(Constants.channelId, instagramStory.getMedia()).caption(msg));
-            else if (version == 2) {
-                bot.execute(new SendVideo(Constants.channelId, instagramStory.getMedia()).caption(msg));
+            case "InstagramStory" -> {
+                InstagramStory instagramStory = ((InstagramStory) item);
+                int version = instagramStory.getVersion();
+                String msg = "Стори " + user + "\n\n" + date;
+                if (version == 1)
+                    bot.execute(new SendPhoto(Constants.channelId, instagramStory.getMedia()).caption(msg));
+                else if (version == 2) {
+                    bot.execute(new SendVideo(Constants.channelId, instagramStory.getMedia()).caption(msg));
+                }
             }
-        }
-        else if (className.equals("InstagramReel")) {
-            InstagramReel instagramReel = ((InstagramReel) item);
-            String caption = instagramReel.getCaption();
-            String translated = Translator.translateTextToRussian(caption);
-            String msg = "Рил " + user + "\n\n"
-                    + caption + "\n\n" +
-                    "Перевод: " + "\n\n" + translated +
-                    "\n\n" + date;
-            bot.execute(new SendVideo(Constants.channelId, instagramReel.getVideo()).caption(msg));
+            case "InstagramReel" -> {
+                InstagramReel instagramReel = ((InstagramReel) item);
+                String caption = instagramReel.getCaption();
+                String translated = Translator.translateTextToRussian(caption);
+                String msg = "Рил " + user + "\n\n"
+                        + caption + "\n\n" +
+                        "Перевод: " + "\n\n" + translated +
+                        "\n\n" + date;
+                bot.execute(new SendVideo(Constants.channelId, instagramReel.getVideo()).caption(msg));
+            }
         }
     }
 
@@ -166,14 +167,16 @@ public class TELEGRAM_API {
             try {
                 sendMessageToChannel(post);
                 VK_API.postPost(post);
+                answer = Constants.successPost;
             } catch (ClientException | ApiException e) {
                 e.printStackTrace();
+                answer = "Не удалось опубликовать пост";
+                answer += getCallingMethodName();
             }
             finally {
                 for (File f : post.getMedia())
                     f.delete();
             }
-            answer = Constants.successPost;
         }
         else {
             answer = "Null Pointer Exception >_<";
@@ -189,12 +192,15 @@ public class TELEGRAM_API {
             try {
                 sendMessageToChannel(story);
                 VK_API.postStory(story);
+                answer = Constants.successStory;
             } catch (ClientException | ApiException e) {
                 e.printStackTrace();
+                answer = "Не удалось опубликовать стори";
+                answer += getCallingMethodName();
             } finally {
                 story.getMedia().delete();
             }
-            answer = Constants.successStory;
+
         }
         else {
             answer = "Null Pointer Exception >_<";
@@ -210,12 +216,14 @@ public class TELEGRAM_API {
             try {
                 sendMessageToChannel(reel);
                 VK_API.postReel(reel);
+                answer = Constants.successReel;
             } catch (ClientException | ApiException e) {
                 e.printStackTrace();
+                answer = "Не удалось опубликовать рил";
+                answer += getCallingMethodName();
             } finally {
                 reel.getVideo().delete();
             }
-            answer = Constants.successReel;
         }
         else {
             answer = "Null Pointer Exception >_<";

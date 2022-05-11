@@ -59,18 +59,30 @@ public class Bot {
     static class TaskPostsCheck extends TimerTask {
         @Override
         public void run() {
-            int delay = (180 + new Random().nextInt(420)) * 1000;
-            timerPosts.schedule(new TaskPostsCheck(), delay);
-            Updater.postUpdater();
+            try {
+                int delay = (180 + new Random().nextInt(420)) * 1000;
+                timerPosts.schedule(new TaskPostsCheck(), delay);
+                Updater.postUpdater();
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+                TELEGRAM_API.notifyAdmins("Ошибка в проверке постов");
+            }
         }
     }
 
     static class TaskStoriesCheck extends TimerTask {
         @Override
         public void run() {
-            int delay = (100 + new Random().nextInt(400)) * 1000;
-            timerStories.schedule(new TaskStoriesCheck(), delay);
-            Updater.storyUpdater();
+            try {
+                int delay = (100 + new Random().nextInt(400)) * 1000;
+                timerStories.schedule(new TaskStoriesCheck(), delay);
+                Updater.storyUpdater();
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+                TELEGRAM_API.notifyAdmins("Ошибка в проверке сториз");
+            }
         }
     }
 
