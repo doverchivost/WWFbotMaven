@@ -113,7 +113,7 @@ public class TELEGRAM_API {
             case "InstagramPost" -> {
                 InstagramPost instagramPost = ((InstagramPost) item);
                 String caption = instagramPost.getCaption();
-                String translated = Translator.translateTextToRussian(caption);
+                String translated = instagramPost.getTranslatedCaption();
                 int[] versions = instagramPost.getVersions();
                 int count = instagramPost.getMediaCount();
                 String msg = "Пост " + user + "\n\n"
@@ -150,7 +150,7 @@ public class TELEGRAM_API {
             case "InstagramReel" -> {
                 InstagramReel instagramReel = ((InstagramReel) item);
                 String caption = instagramReel.getCaption();
-                String translated = Translator.translateTextToRussian(caption);
+                String translated = instagramReel.getTranslatedCaption();
                 String msg = "Рил " + user + "\n\n"
                         + caption + "\n\n" +
                         "Перевод: " + "\n\n" + translated +
@@ -171,7 +171,7 @@ public class TELEGRAM_API {
             } catch (ClientException | ApiException e) {
                 e.printStackTrace();
                 answer = "Не удалось опубликовать пост";
-                answer += getCallingMethodName();
+                answer += Constants.getStackTrace();
             }
             finally {
                 for (File f : post.getMedia())
@@ -180,7 +180,7 @@ public class TELEGRAM_API {
         }
         else {
             answer = "Null Pointer Exception >_<";
-            answer += getCallingMethodName();
+            answer += Constants.getStackTrace();
         }
         return answer;
     }
@@ -196,7 +196,7 @@ public class TELEGRAM_API {
             } catch (ClientException | ApiException e) {
                 e.printStackTrace();
                 answer = "Не удалось опубликовать стори";
-                answer += getCallingMethodName();
+                answer += Constants.getStackTrace();
             } finally {
                 story.getMedia().delete();
             }
@@ -204,7 +204,7 @@ public class TELEGRAM_API {
         }
         else {
             answer = "Null Pointer Exception >_<";
-            answer += getCallingMethodName();
+            answer += Constants.getStackTrace();
         }
         return answer;
     }
@@ -220,20 +220,15 @@ public class TELEGRAM_API {
             } catch (ClientException | ApiException e) {
                 e.printStackTrace();
                 answer = "Не удалось опубликовать рил";
-                answer += getCallingMethodName();
+                answer += Constants.getStackTrace();
             } finally {
                 reel.getVideo().delete();
             }
         }
         else {
             answer = "Null Pointer Exception >_<";
-            answer += getCallingMethodName();
+            answer += Constants.getStackTrace();
         }
         return answer;
-    }
-
-    private static String getCallingMethodName() {
-        StackTraceElement callingFrame = Thread.currentThread().getStackTrace()[10];
-        return callingFrame.getMethodName();
     }
 }

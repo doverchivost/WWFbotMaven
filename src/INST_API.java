@@ -164,14 +164,13 @@ public class INST_API {
         String caption = "";
         try {
             if (media.getCaption().getText() != null) {
-                caption = media.getCaption().getText();
-                caption = caption.replace("@", "@ ");
-                caption = caption.replace("#", "# ");
+                caption = spaceAfterHashtagsAndMentions(media.getCaption().getText());
             }
         } catch (NullPointerException e) {
             //there was no text in the post
         }
         instPost.setCaption(caption);
+        instPost.setTranslatedCaption(spaceAfterHashtagsAndMentions(Translator.translateTextToRussian(caption)));
 
         int type = Integer.parseInt(media.getMedia_type());
         if (type == 1) {
@@ -298,14 +297,13 @@ public class INST_API {
         String caption = "";
         try {
             if (media.getCaption().getText() != null) {
-                caption = media.getCaption().getText();
-                caption = caption.replace("@", "@ ");
-                caption = caption.replace("#", "# ");
+                caption = spaceAfterHashtagsAndMentions(media.getCaption().getText());
             }
         } catch (NullPointerException e) {
             //there was no text in the post
         }
         instReel.setCaption(caption);
+        instReel.setTranslatedCaption(spaceAfterHashtagsAndMentions(Translator.translateTextToRussian(caption)));
 
         try {
             if (mediaType == 2) {
@@ -324,6 +322,10 @@ public class INST_API {
         }
         System.out.println("Method: getInstagramStory - ending");
         return instReel;
+    }
+
+    private static String spaceAfterHashtagsAndMentions(String caption) {
+        return caption.replace("@", "@ ").replace("#", "# ");
     }
 
     private static InstagramStory getInstagramStory(TimelineMedia media) {

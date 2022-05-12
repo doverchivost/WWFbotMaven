@@ -28,7 +28,7 @@ public class Translator {
         else
             translatedText = translateGoogle("", "ru", text);
 
-        return translatedText.replace("\\n", "\n");
+        return translatedText.replace("\\n", "\n").replace("\\ n", "\n");
     }
 
     private static String translateGoogle(String langFrom, String langTo, String text)  {

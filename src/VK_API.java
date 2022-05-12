@@ -12,11 +12,8 @@ import com.vk.api.sdk.objects.photos.responses.PhotoUploadResponse;
 import com.vk.api.sdk.objects.video.responses.VideoUploadResponse;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.TimeZone;
 
 public class VK_API {
 
@@ -66,7 +63,7 @@ public class VK_API {
 
         String translatedMessage = message_in_post;
         if (message_in_post.length() > 1 )
-            translatedMessage = Translator.translateTextToRussian(message_in_post).replace("\\n", "\n");
+            translatedMessage = post.getTranslatedCaption();
 
         String postCaption;
         if (user.equals(Constants.main_account_username)) {
@@ -93,7 +90,7 @@ public class VK_API {
 
         String translatedMessage = message_in_reel;
         if (translatedMessage.length() > 1)
-            translatedMessage = Translator.translateTextToRussian(message_in_reel).replace("\\n", "\n");;
+            translatedMessage = reel.getTranslatedCaption();
 
         String postCaption;
         if (user.equals(Constants.main_account_username)) {
