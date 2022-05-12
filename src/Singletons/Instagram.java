@@ -27,6 +27,12 @@ public class Instagram {
         return localInstagram;
     }
 
+    public static void reLogin() {
+        synchronized (Instagram.class) {
+            instagramLogin(Constants.instagram_username, Constants.instagram_password);
+        }
+    }
+
     private static void instagramLogin(String instagramUsername, String instagramPassword) {
         Callable<String> inputCode = () -> {
             TelegramBot bot = Telegram.getTelegramBot();

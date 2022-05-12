@@ -1,4 +1,5 @@
 import Constants.Constants;
+import Singletons.Instagram;
 import org.apache.commons.collections4.map.PassiveExpiringMap;
 import java.io.*;
 import java.util.*;
@@ -66,7 +67,10 @@ public class Bot {
             }
             catch (Exception e) {
                 e.printStackTrace();
-                TELEGRAM_API.notifyAdmins("Ошибка в проверке постов");
+                Instagram.reLogin();
+                String msg = "Ошибка в проверке постов. Выполнен повторный вход в инстаграм аккаунт.\n\nСтек:\n\n";
+                msg += Constants.getStackTrace();
+                TELEGRAM_API.notifyAdmins(msg);
             }
         }
     }
@@ -81,7 +85,10 @@ public class Bot {
             }
             catch (Exception e) {
                 e.printStackTrace();
-                TELEGRAM_API.notifyAdmins("Ошибка в проверке сториз");
+                Instagram.reLogin();
+                String msg = "Ошибка в проверке сториз. Выполнен повторный вход в инстаграм аккаунт.\n\nСтек:\n\n";
+                msg += Constants.getStackTrace();
+                TELEGRAM_API.notifyAdmins(msg);
             }
         }
     }
