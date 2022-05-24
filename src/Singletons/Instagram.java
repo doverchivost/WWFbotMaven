@@ -19,7 +19,7 @@ public class Instagram {
             synchronized (Instagram.class) {
                 localInstagram = instagram;
                 if (localInstagram == null) {
-                    instagramLogin(Constants.instagram_username, Constants.instagram_password);
+                    instagramLogin();
                     localInstagram = instagram;
                 }
             }
@@ -29,11 +29,14 @@ public class Instagram {
 
     public static void reLogin() {
         synchronized (Instagram.class) {
-            instagramLogin(Constants.instagram_username, Constants.instagram_password);
+            loginThroughPassword();
         }
     }
 
-    private static void instagramLogin(String instagramUsername, String instagramPassword) {
+    private static final File clientFile = new File("inst\\client.ser");
+    private static final File cookieFile = new File("inst\\cookie.ser");
+
+    private static void loginThroughPassword() {
         Callable<String> inputCode = () -> {
             TelegramBot bot = Telegram.getTelegramBot();
             bot.execute(new SendMessage(Constants.admin_telegram_ids[0], "Please input code: "));
@@ -44,9 +47,29 @@ public class Instagram {
             return Constants.sixDigits;
         };
 
-        File clientFile = new File("inst\\client.ser");
-        File cookieFile = new File("inst\\cookie.ser");
+        IGClient.Builder.LoginHandler twoFactorHandler = (client, response) ->
+                IGChallengeUtils.resolveTwoFactor(client, response, inputCode);
 
+        IGClient.Builder.LoginHandler challengeHandler = (client, response) ->
+                IGChallengeUtils.resolveChallenge(client, response, inputCode);
+
+        try {
+            instagram = IGClient.builder()
+                    .username(Constants.instagram_username)
+                    .password(Constants.instagram_password)
+                    .onTwoFactor(twoFactorHandler)
+                    .onChallenge(challengeHandler)
+                    .login();
+
+            instagram.serialize(clientFile, cookieFile);
+            System.out.println("LOGIN THROUGH PASSWORD");
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void instagramLogin() {
         if (clientFile.exists() && cookieFile.exists()) {
             try {
                 instagram = IGClient.deserialize(clientFile, cookieFile);
@@ -56,26 +79,7 @@ public class Instagram {
             System.out.println("LOGIN THROUGH SERIALIZATION");
         }
         else {
-            IGClient.Builder.LoginHandler twoFactorHandler = (client, response) ->
-                    IGChallengeUtils.resolveTwoFactor(client, response, inputCode);
-
-            IGClient.Builder.LoginHandler challengeHandler = (client, response) ->
-                    IGChallengeUtils.resolveChallenge(client, response, inputCode);
-
-            try {
-                instagram = IGClient.builder()
-                        .username(instagramUsername)
-                        .password(instagramPassword)
-                        .onTwoFactor(twoFactorHandler)
-                        .onChallenge(challengeHandler)
-                        .login();
-
-                instagram.serialize(clientFile, cookieFile);
-                System.out.println("LOGIN THROUGH PASSWORD");
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
+            loginThroughPassword();
         }
     }
 }
