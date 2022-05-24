@@ -17,7 +17,7 @@ public class Updater {
                 Constants.latestStoryPk = newStory.getPk();
                 rewritePkFile(Constants.latestStoryPk, Constants.storyPkFile);
                 String msg = TELEGRAM_API.postingStoryNotification(newStory);
-                if (msg.equals(Constants.successStory))
+                if (msg == Constants.successStory)
                     msg = "Недавно опубликованная стори пользователя уже добавлена в группу!";
                 else
                     msg = "На проверке новых сториз:\n\n" + msg;
@@ -25,7 +25,7 @@ public class Updater {
             }
         }
         catch (ClientException | ApiException e) {
-            TELEGRAM_API.notifyAdmins("Ошибка при проерке на наличие новых сториз");
+            TELEGRAM_API.notifyAdmins("Ошибка при попытке опубликовать новую стори в сообщество.");
             e.printStackTrace();
         }
     }
@@ -37,7 +37,7 @@ public class Updater {
                 Constants.latestPostPk = newPost.getPk();
                 rewritePkFile(Constants.latestPostPk, Constants.postPkFile);
                 String msg = TELEGRAM_API.postingPostNotification(newPost);
-                if (msg.equals(Constants.successPost))
+                if (msg == Constants.successPost)
                     msg = "Недавно опубликованный пост пользователя уже добавлен в группу!";
                 else
                     msg = "На проверке новых постов:\n\n" + msg;
@@ -45,7 +45,7 @@ public class Updater {
             }
         }
         catch (ClientException | ApiException e) {
-            TELEGRAM_API.notifyAdmins("Ошибка при проерке на наличие новых постов");
+            TELEGRAM_API.notifyAdmins("Ошибка при попытке опубликовать новый пост в сообщество.");
             e.printStackTrace();
         }
     }

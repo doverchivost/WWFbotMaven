@@ -34,6 +34,7 @@ public class Translator {
     private static String translateGoogle(String langFrom, String langTo, String text)  {
         if (langFrom.equals(langTo)) return text;
         StringBuilder response = new StringBuilder();
+
         try {
             String urlStr = Constants.googleScriptUrl +
                     "?q=" + URLEncoder.encode(text, StandardCharsets.UTF_8) +
@@ -43,17 +44,13 @@ public class Translator {
 
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setRequestProperty("User-Agent", "Mozilla/5.0");
-            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            String inputLine;
-            while ((inputLine = in.readLine()) != null) {
-                response.append(inputLine);
-            }
-            in.close();
+
+            return readBody(con.getInputStream());
         }
         catch (IOException e) {
             e.printStackTrace();
         }
-        return response.toString();
+        return text;
     }
 
     private static String translateNaver(String langFrom, String langTo, String text) {
@@ -66,10 +63,14 @@ public class Translator {
         requestHeaders.put("X-Naver-Client-Secret", clientSecret);
 
         String responseBody = postNaverTranslate(apiURL, requestHeaders, text, langFrom, langTo);
-        //System.out.println(responseBody);
         if (responseBody.split("\"").length > 15)
             return responseBody.split("\"")[15];
         return null;
+    }
+
+    private static String postNaverTranslate(String apiUrl, Map<String, String> requestHeaders, String text, String langFrom, String langTo){
+        String postParams = "source=" + langFrom + "&target=" + langTo + "&text=" + text;
+        return postNaver(apiUrl, requestHeaders, postParams);
     }
 
     private static String detectLanguageNaver(String msg) {
@@ -85,40 +86,16 @@ public class Translator {
         return responseBody.split("\"")[3];
     }
 
-    private static String postNaverTranslate(String apiUrl, Map<String, String> requestHeaders, String text, String langFrom, String langTo){
-        HttpURLConnection con = connect(apiUrl);
-        String postParams = "source=" + langFrom + "&target=" + langTo + "&text=" + text;
-        try {
-            con.setRequestMethod("POST");
-            for(Map.Entry<String, String> header :requestHeaders.entrySet()) {
-                con.setRequestProperty(header.getKey(), header.getValue());
-            }
-
-            con.setDoOutput(true);
-            try (DataOutputStream wr = new DataOutputStream(con.getOutputStream())) {
-                wr.write(postParams.getBytes());
-                wr.flush();
-            }
-
-            int responseCode = con.getResponseCode();
-            if (responseCode == HttpURLConnection.HTTP_OK) { // 정상 응답
-                return readBody(con.getInputStream());
-            } else {  // 에러 응답
-                return readBody(con.getErrorStream());
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("API 요청과 응답 실패", e);
-        } finally {
-            con.disconnect();
-        }
+    private static String postNaverDetect(String apiUrl, Map<String, String> requestHeaders, String text){
+        String postParams =  "query="  + text; //원본언어: 한국어 (ko) -> 목적언어: 영어 (en)
+        return postNaver(apiUrl, requestHeaders, postParams);
     }
 
-    private static String postNaverDetect(String apiUrl, Map<String, String> requestHeaders, String text){
+    private static String postNaver(String apiUrl, Map<String, String> requestHeaders, String postParams) {
         HttpURLConnection con = connect(apiUrl);
-        String postParams =  "query="  + text; //원본언어: 한국어 (ko) -> 목적언어: 영어 (en)
         try {
             con.setRequestMethod("POST");
-            for(Map.Entry<String, String> header :requestHeaders.entrySet()) {
+            for(Map.Entry<String, String> header : requestHeaders.entrySet()) {
                 con.setRequestProperty(header.getKey(), header.getValue());
             }
 
