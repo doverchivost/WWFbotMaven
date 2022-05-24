@@ -60,36 +60,40 @@ public class Bot {
     static class TaskPostsCheck extends TimerTask {
         @Override
         public void run() {
+            //20-30 min
+            int delay = ((20*60*1000) + new Random().nextInt(10*60*1000));
             try {
-                int delay = (180 + new Random().nextInt(420)) * 1000;
-                timerPosts.schedule(new TaskPostsCheck(), delay);
                 Updater.postUpdater();
             }
             catch (Exception e) {
                 e.printStackTrace();
                 Instagram.reLogin();
-                String msg = "Ошибка в проверке постов. Выполнен повторный вход в инстаграм аккаунт.\n\nСтек:\n\n";
-                msg += Constants.getStackTrace();
+                delay = 60 * 60 * 1000;
+                String msg = "Ошибка в проверке постов. Посты будут проверены через час.\n\n" + e.getMessage();
                 TELEGRAM_API.notifyAdmins(msg);
             }
+            System.out.println("Next task for Posts in: " + delay/1000 + " s.");
+            timerPosts.schedule(new TaskPostsCheck(), delay);
         }
     }
 
     static class TaskStoriesCheck extends TimerTask {
         @Override
         public void run() {
+            //10-15 min
+            int delay = ((10*60*1000) + new Random().nextInt(5*60*1000));
             try {
-                int delay = (100 + new Random().nextInt(400)) * 1000;
-                timerStories.schedule(new TaskStoriesCheck(), delay);
                 Updater.storyUpdater();
             }
             catch (Exception e) {
                 e.printStackTrace();
                 Instagram.reLogin();
-                String msg = "Ошибка в проверке сториз. Выполнен повторный вход в инстаграм аккаунт.\n\nСтек:\n\n";
-                msg += Constants.getStackTrace();
+                delay = 60 * 60 * 1000;
+                String msg = "Ошибка в проверке сториз. Сториз будут проверены через час.";
                 TELEGRAM_API.notifyAdmins(msg);
             }
+            System.out.println("Next task for Stories in: " + delay/1000 + " s.");
+            timerStories.schedule(new TaskStoriesCheck(), delay);
         }
     }
 
