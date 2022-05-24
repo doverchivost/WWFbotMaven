@@ -39,17 +39,40 @@ public class TELEGRAM_API {
                 //обрабатываем сообщения только от админов сообщества в ВК
                 if (is_admin) {
                     String message = update.message().text().trim();
+                    System.out.println("From " + chatId + ": " + message);
 
                     if (message.equals("/start")) answer = "Добро пожаловать, админ группы!";
-                    else if (message.equals("/story")) Updater.storyUpdater();
-                    else if (message.equals("/post")) Updater.postUpdater();
+                    else if (message.equals("/story")) {
+                        try {
+                            Updater.storyUpdater();
+                        }
+                        catch (Exception e) {
+                            e.printStackTrace();
+                            answer = "В настоящий момент проверку сториз выполнить невозможно.";
+                        }
+                    }
+                    else if (message.equals("/post")) {
+                        try {
+                            Updater.postUpdater();
+                        }
+                        catch (Exception e) {
+                            e.printStackTrace();
+                            answer = "В настоящий момент проверку постов выполнить невозможно.";
+                        }
+                    }
                     else if (Pattern.matches("[0-9][0-9][0-9][0-9][0-9][0-9]", message)) {
                         Constants.sixDigits = message;
                         Constants.hasDigits = true;
                     }
                     else {
-                        System.out.println("From " + chatId + ": " + message);
                         answer = TELEGRAM_API.responseTelegram(message);
+                        //if (answer.length() <= 1) {
+                        if (answer != Constants.successStory && answer != Constants.successPost
+                        && answer != Constants.successReel) {
+                            answer += "\n\nК сожалению, сейчас я не могу обработать ваш запрос.\n" +
+                                    "Пожалуйста, попытайтесь позже.\n\n" +
+                                    Constants.getStackTrace();
+                        }
                     }
                 } else {
                     answer = "Sorry, you are not allowed to use me. Your id: " + chatId;
@@ -61,8 +84,9 @@ public class TELEGRAM_API {
     }
 
     public static void notifyAdmins(String msg) {
-        for (long admin_id : Constants.admin_telegram_ids)
-            bot.execute(new SendMessage(admin_id, msg));
+        //for (long admin_id : Constants.admin_telegram_ids)
+        //    bot.execute(new SendMessage(admin_id, msg));
+        bot.execute(new SendMessage(Constants.admin_telegram_ids[0], msg));
     }
 
     private static String responseTelegram(String message) {
@@ -94,7 +118,6 @@ public class TELEGRAM_API {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                //answer = "Прости, я пока не умею с ними работать :(";
             }
             else {
                 answer = "Не могу разобрать ссылку. Попробуй снова!";
@@ -111,6 +134,7 @@ public class TELEGRAM_API {
 
         switch (className) {
             case "InstagramPost" -> {
+                System.out.println("Posting Instagram Post to Channel");
                 InstagramPost instagramPost = ((InstagramPost) item);
                 String caption = instagramPost.getCaption();
                 String translated = instagramPost.getTranslatedCaption();
@@ -120,24 +144,18 @@ public class TELEGRAM_API {
                         + caption + "\n\n" +
                         "Перевод: " + "\n\n" + translated +
                         "\n\n" + date;
-                if (count == 1) {
-                    if (versions[0] == 1)
-                        bot.execute(new SendPhoto(Constants.channelId, instagramPost.getMedia()[0]).caption(msg));
-                    else if (versions[0] == 2)
-                        bot.execute(new SendVideo(Constants.channelId, instagramPost.getMedia()[0]).caption(msg));
-                } else {
-                    InputMedia[] media = new InputMedia[count];
-                    for (int i = 0; i < count; i++) {
-                        if (versions[i] == 1)
-                            media[i] = new InputMediaPhoto(instagramPost.getMedia()[i]);
-                        else if (versions[i] == 2)
-                            media[i] = new InputMediaVideo(instagramPost.getMedia()[i]);
-                    }
-                    bot.execute(new SendMediaGroup(Constants.channelId, media));
-                    bot.execute(new SendMessage(Constants.channelId, msg));
+                InputMedia[] media = new InputMedia[count];
+                for (int i = 0; i < count; i++) {
+                    if (versions[i] == 1)
+                        media[i] = new InputMediaPhoto(instagramPost.getMedia()[i]);
+                    else if (versions[i] == 2)
+                        media[i] = new InputMediaVideo(instagramPost.getMedia()[i]);
                 }
+                bot.execute(new SendMediaGroup(Constants.channelId, media));
+                bot.execute(new SendMessage(Constants.channelId, msg));
             }
             case "InstagramStory" -> {
+                System.out.println("Posting Instagram Story to Channel");
                 InstagramStory instagramStory = ((InstagramStory) item);
                 int version = instagramStory.getVersion();
                 String msg = "Стори " + user + "\n\n" + date;
@@ -148,6 +166,7 @@ public class TELEGRAM_API {
                 }
             }
             case "InstagramReel" -> {
+                System.out.println("Posting Instagram Reel to Channel");
                 InstagramReel instagramReel = ((InstagramReel) item);
                 String caption = instagramReel.getCaption();
                 String translated = instagramReel.getTranslatedCaption();
@@ -163,14 +182,17 @@ public class TELEGRAM_API {
     public static String postingPostNotification (InstagramPost post)  {
         String answer;
         if (post.getUser() != null) {
-            //пуюликуем пост в канал и вк и удаляем файлы
+            //публикуем пост в канал и вк и удаляем файлы
             try {
                 sendMessageToChannel(post);
                 VK_API.postPost(post);
                 answer = Constants.successPost;
             } catch (ClientException | ApiException e) {
                 e.printStackTrace();
-                answer = "Не удалось опубликовать пост";
+                answer = "Не удалось опубликовать пост в вк";
+                answer += Constants.getStackTrace();
+            } catch (Exception e) {
+                answer = "Что-то пошло не так";
                 answer += Constants.getStackTrace();
             }
             finally {
@@ -195,7 +217,10 @@ public class TELEGRAM_API {
                 answer = Constants.successStory;
             } catch (ClientException | ApiException e) {
                 e.printStackTrace();
-                answer = "Не удалось опубликовать стори";
+                answer = "Не удалось опубликовать стори в вк";
+                answer += Constants.getStackTrace();
+            } catch (Exception e) {
+                answer = "Что-то пошло не так";
                 answer += Constants.getStackTrace();
             } finally {
                 story.getMedia().delete();
@@ -220,6 +245,9 @@ public class TELEGRAM_API {
             } catch (ClientException | ApiException e) {
                 e.printStackTrace();
                 answer = "Не удалось опубликовать рил";
+                answer += Constants.getStackTrace();
+            } catch (Exception e) {
+                answer = "Что-то пошло не так";
                 answer += Constants.getStackTrace();
             } finally {
                 reel.getVideo().delete();
