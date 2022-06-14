@@ -25,7 +25,7 @@ public class Updater {
             }
         }
         catch (ClientException | ApiException e) {
-            TELEGRAM_API.notifyAdmins("Ошибка при попытке опубликовать новую стори в сообщество.");
+            TELEGRAM_API.notifyMainAdmin("Ошибка при попытке опубликовать новую стори в сообщество.");
             e.printStackTrace();
         }
     }
@@ -45,7 +45,7 @@ public class Updater {
             }
         }
         catch (ClientException | ApiException e) {
-            TELEGRAM_API.notifyAdmins("Ошибка при попытке опубликовать новый пост в сообщество.");
+            TELEGRAM_API.notifyMainAdmin("Ошибка при попытке опубликовать новый пост в сообщество.");
             e.printStackTrace();
         }
     }

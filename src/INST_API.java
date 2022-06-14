@@ -4,11 +4,15 @@ import InstagramItems.InstagramReel;
 import InstagramItems.InstagramStory;
 import Singletons.Instagram;
 import com.github.instagram4j.instagram4j.IGClient;
+import com.github.instagram4j.instagram4j.exceptions.IGResponseException;
 import com.github.instagram4j.instagram4j.models.media.reel.ReelImageMedia;
 import com.github.instagram4j.instagram4j.models.media.reel.ReelMedia;
 import com.github.instagram4j.instagram4j.models.media.reel.ReelVideoMedia;
 import com.github.instagram4j.instagram4j.models.media.timeline.*;
 import com.github.instagram4j.instagram4j.requests.IGRequest;
+import com.github.instagram4j.instagram4j.requests.accounts.AccountsCurrentUserRequest;
+import com.github.instagram4j.instagram4j.requests.discover.DiscoverTopicalExploreRequest;
+import com.github.instagram4j.instagram4j.requests.feed.FeedTimelineRequest;
 import com.github.instagram4j.instagram4j.requests.feed.FeedUserRequest;
 import com.github.instagram4j.instagram4j.requests.feed.FeedUserStoryRequest;
 import com.github.instagram4j.instagram4j.requests.media.MediaInfoRequest;
@@ -29,6 +33,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 public class INST_API {
 
@@ -111,6 +117,8 @@ public class INST_API {
             TimelineMedia currentPost = posts.get(i);
             if (!Constants.post5latestPk.containsKey(currentPost.getPk())) {
                 InstagramPost newPost = createInstagramPost(currentPost);
+                while (newPost.getUser() == null)
+                    newPost = createInstagramPost(currentPost);
                 notUpdatedPosts.add(newPost);
                 Constants.post5latestPk.put(newPost.getPk(), newPost.getDate());
             }
@@ -137,6 +145,8 @@ public class INST_API {
             long currentStoryPk = stories.get(i).getPk();
             if (!Constants.story24HoursPk.containsKey(currentStoryPk)) {
                 InstagramStory currentStory = createInstagramStory(stories.get(i));
+                while (currentStory.getUser() == null)
+                    currentStory = createInstagramStory(stories.get(i));
                 Constants.story24HoursPk.put(currentStoryPk, currentStory.getDate());
                 notUpdatedStories.add(currentStory);
             }
@@ -235,7 +245,6 @@ public class INST_API {
         long pk = reel.getPk();
         story.setPk(pk);
         story.setUser(reel.getUser().getUsername());
-
         int mediaType = Integer.parseInt(reel.getMedia_type());
         story.setVersion(mediaType);
         try {
@@ -360,6 +369,7 @@ public class INST_API {
 
     private static IGResponse sendRequest(IGRequest<IGResponse> request) {
         IGResponse response = null;
+        //CompletableFuture<IGResponse> req = null;
         int status = 0;
         int counter = 0;
         while (status != 200) {
@@ -368,8 +378,28 @@ public class INST_API {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            response = request.execute(instagram).join();//Bot.instagram.sendRequest(request).join();
+
+            response = request.execute(instagram).join();
             status = response.getStatusCode();
+/*
+            try {
+                ///response = request.execute(instagram).join();//Bot.instagram.sendRequest(request).join();
+                req = instagram.sendRequest(request);
+                response = req.join();
+                status = response.getStatusCode();
+
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+                TELEGRAM_API.notifyAdmins(e.getMessage());
+                try {
+                    req.get().getError_type();
+                }
+                catch (Exception ex) {
+                    TELEGRAM_API.notifyAdmins(req);
+                }
+
+            }*/
 
             counter++;
             if (counter > 50) {
@@ -379,6 +409,31 @@ public class INST_API {
             }
         }
         return response;
+    }
+
+    public static void randmonTask() {
+        try {
+            //разннобразить: рандомные действия при вызове
+            //вызвать как TimerTask
+            int random = new Random().nextInt(5);
+            instagram.actions().account().currentUser().get().getUser().getFollower_count();
+            switch (random) {
+                case 1:
+                    new FeedTimelineRequest().execute(instagram)
+                            .thenAccept(response -> {
+                                response.getFeed_items();
+                            }).join();
+                case 2:
+                    new AccountsCurrentUserRequest().execute(instagram).join();
+                case 3:
+                    new UsersUsernameInfoRequest("doverchivost").execute(instagram).join();
+                case 4:
+                    new DiscoverTopicalExploreRequest().execute(instagram).join();
+                case 5:
+                    instagram.actions().users().findByUsername("instagram").join();
+            }
+        }
+        catch (Exception e) {}
     }
 
     private static File convertURLintoFILE(String url, String pk, int version) {
@@ -413,6 +468,6 @@ public class INST_API {
     }
 
     private static int randomSleep() {
-        return 5000 + new Random().nextInt(1000);
+        return 5000 + new Random().nextInt(15000);
     }
 }
