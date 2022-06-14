@@ -19,6 +19,16 @@ public class Translator {
         String detectedLanguage = detectLanguageNaver(text);
         if (detectedLanguage.equals("ru")) return text;
 
+        //для сравнения перевода от Папаго
+        try {
+            if (detectedLanguage.equals("ko")) {
+                String naverTR = translateNaver(detectedLanguage, "ru", text);
+                if (naverTR != null)
+                TELEGRAM_API.notifyMainAdmin("Перевод Papago:\n\n" + naverTR.replace("\\n", "\n"));
+            }
+        }
+        catch (Exception e) {}
+
         String translatedText = "";
 
         text = text.replace("\n", "\\n");
