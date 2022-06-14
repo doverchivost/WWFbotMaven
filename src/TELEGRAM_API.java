@@ -42,6 +42,10 @@ public class TELEGRAM_API {
                     System.out.println("From " + chatId + ": " + message);
 
                     if (message.equals("/start")) answer = "Добро пожаловать, админ группы!";
+                    else if (message.equals("/stop") || message.equals("/end")) {
+                        //System.exit(0);
+                        answer = "я не могу отлкючится сам";
+                    }
                     else if (message.equals("/story")) {
                         try {
                             Updater.storyUpdater();
@@ -84,8 +88,12 @@ public class TELEGRAM_API {
     }
 
     public static void notifyAdmins(String msg) {
-        //for (long admin_id : Constants.admin_telegram_ids)
-        //    bot.execute(new SendMessage(admin_id, msg));
+        for (long admin_id : Constants.admin_telegram_ids)
+            bot.execute(new SendMessage(admin_id, msg));
+
+    }
+
+    public static void notifyMainAdmin(String msg) {
         bot.execute(new SendMessage(Constants.admin_telegram_ids[0], msg));
     }
 
