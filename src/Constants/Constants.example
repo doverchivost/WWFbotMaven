@@ -52,6 +52,16 @@ public class Constants {
     public static final String successStory = "story posted on vk and channel";
     public static final String successReel = "reel posted on vk and channel";
 
+    public static final int postUpdateInitialDelay = 15*60*1000;
+    public static final int storyUpdateInitialDelay = 10*60*1000;
+    public static final int randomInitialDelay = 40*60*1000;
+    public static final int randomDelayFrom = 5*60*1000;
+    public static final int randomDelayTo = 60*60*1000;
+    public static final int postCheckDelayFrom = 30*60*1000;
+    public static final int postCheckDelayTo = 60*60*1000;
+    public static final int storyCheckDelayFrom = 10*60*1000;
+    public static final int storyCheckDelayTo = 30*60*1000;
+
     //Papago
     public static final String clientId = "clientId";
     public static final String clientSecret = "clientSecret";

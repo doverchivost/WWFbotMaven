@@ -1,5 +1,4 @@
 import Constants.Constants;
-import Singletons.Instagram;
 import org.apache.commons.collections4.map.PassiveExpiringMap;
 import java.io.*;
 import java.util.*;
@@ -7,8 +6,6 @@ import java.util.concurrent.TimeUnit;
 
 public class Bot {
 
-    //private final static Timer timerPosts = new Timer();
-    //private final static Timer timerStories = new Timer();
     private final static TimerTask timerPosts = new TaskPostsCheck();
     private final static TimerTask timerStories = new TaskStoriesCheck();
     private final static TimerTask timerRandom = new TaskRandomAction();
@@ -20,11 +17,9 @@ public class Bot {
         TELEGRAM_API.telegramAddListener();
         initializeVariables();
         INST_API.start();
-        updatePosts.schedule(timerPosts, 15*60*1000);
-        updateStories.schedule(timerStories, 10*60*1000);
-        randomTimer.schedule(timerRandom, 60*60*1000);
-        //new TaskPostsCheck().run();
-        //new TaskStoriesCheck().run();
+        updatePosts.schedule(timerPosts, Constants.postUpdateInitialDelay);
+        updateStories.schedule(timerStories, Constants.storyUpdateInitialDelay);
+        randomTimer.schedule(timerRandom, Constants.randomInitialDelay);
     }
 
     private static void initializeVariables() throws IOException {
@@ -69,16 +64,15 @@ public class Bot {
     static class TaskRandomAction extends TimerTask {
         @Override
         public void run() {
-            int delay = ((30*60*1000) + new Random().nextInt(60*60*1000));
+            int delay = Constants.randomDelayFrom + new Random().nextInt(Constants.randomDelayTo);
             try {
-                INST_API.randmonTask();
+                INST_API.randomTask();
             }
             catch (Exception e) {
                 e.printStackTrace();
                 TELEGRAM_API.notifyMainAdmin("На рандомном таске: " + e.getMessage() + "\n\n" + Constants.getStackTrace());
             }
             System.out.println("Next random task in: " + delay/1000 + " s.");
-            //timerPosts.schedule(new TaskPostsCheck(), delay);
             randomTimer.schedule(new TaskPostsCheck(), delay);
         }
     }
@@ -86,9 +80,7 @@ public class Bot {
     static class TaskPostsCheck extends TimerTask {
         @Override
         public void run() {
-            //20-30 min
-            //int delay = ((20*60*1000) + new Random().nextInt(10*60*1000));
-            int delay = ((30*60*1000) + new Random().nextInt(60*60*1000));
+            int delay = Constants.postCheckDelayFrom + new Random().nextInt(Constants.postCheckDelayTo);
             try {
                 Updater.postUpdater();
             }
@@ -100,7 +92,6 @@ public class Bot {
                 TELEGRAM_API.notifyMainAdmin(msg);
             }
             System.out.println("Next task for Posts in: " + delay/1000 + " s.");
-            //timerPosts.schedule(new TaskPostsCheck(), delay);
             updatePosts.schedule(new TaskPostsCheck(), delay);
         }
     }
@@ -108,9 +99,7 @@ public class Bot {
     static class TaskStoriesCheck extends TimerTask {
         @Override
         public void run() {
-            //10-15 min
-            //int delay = ((10*60*1000) + new Random().nextInt(5*60*1000));
-            int delay = ((10*60*1000) + new Random().nextInt(30*60*1000));
+            int delay = Constants.storyCheckDelayFrom + new Random().nextInt(Constants.storyCheckDelayTo);
             try {
                 Updater.storyUpdater();
             }
@@ -122,7 +111,6 @@ public class Bot {
                 TELEGRAM_API.notifyMainAdmin(msg);
             }
             System.out.println("Next task for Stories in: " + delay/1000 + " s.");
-            //timerStories.schedule(new TaskStoriesCheck(), delay);
             updateStories.schedule(new TaskStoriesCheck(), delay);
         }
     }
