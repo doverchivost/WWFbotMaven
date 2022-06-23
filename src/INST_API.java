@@ -33,8 +33,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 public class INST_API {
 
@@ -45,8 +43,7 @@ public class INST_API {
         System.out.println("Method: start - beginning");
 
         main_account_pk = getUserPk(Constants.main_account_username);
-        //ДЛЯ ВОНДЖЕ:
-        //main_account_pk = 1819739099;
+        //ДЛЯ ВОНДЖЕ: main_account_pk = 1819739099;
 
         List<TimelineMedia> posts = getPostsByUserPk(main_account_pk);
         if (posts != null) {
@@ -103,7 +100,7 @@ public class INST_API {
         return null;
     }
 
-    public static InstagramPost checkForPostUpdates() throws ClientException, ApiException {
+    public static String[] checkForPostUpdates() throws ClientException, ApiException {
         System.out.println("Method: checkForPostUpdates");
         System.out.println("Method: checkForPostUpdates - getPostsByUserPk");
         List<TimelineMedia> posts = getPostsByUserPk(main_account_pk);
@@ -115,25 +112,28 @@ public class INST_API {
 
         for (int i = postsAmount; i >= 0; i--) {
             TimelineMedia currentPost = posts.get(i);
-            if (!Constants.post5latestPk.containsKey(currentPost.getPk())) {
+            long currentPostPk = currentPost.getPk();
+            if (!Constants.post5latestPk.containsKey(currentPostPk)) {
                 InstagramPost newPost = createInstagramPost(currentPost);
-                while (newPost.getUser() == null)
-                    newPost = createInstagramPost(currentPost);
+                if (newPost.getUser() == null)
+                    newPost = getUserPostByPk(currentPostPk);
                 notUpdatedPosts.add(newPost);
                 Constants.post5latestPk.put(newPost.getPk(), newPost.getDate());
             }
         }
         System.out.println("Method: checkForPostUpdates - ending");
+        String[] answer = new String[2];
         if (notUpdatedPosts.size() >= 1) {
-            for (int i = 0; i < notUpdatedPosts.size() - 1; i++)
-                TELEGRAM_API.postingPostNotification(notUpdatedPosts.get(i));//VK_API.postPost(notUpdatedPosts.get(i));
-            return notUpdatedPosts.get(notUpdatedPosts.size()-1);
+            for (InstagramPost update : notUpdatedPosts)
+                answer[1] = TELEGRAM_API.postingPostNotification(update);
+            answer[0] = notUpdatedPosts.get(notUpdatedPosts.size()-1).getPk() + "";
+            return answer;
         }
 
         return null;
     }
 
-    public static InstagramStory checkForStoryUpdates() throws ClientException, ApiException {
+    public static String[] checkForStoryUpdates() throws ClientException, ApiException {
         System.out.println("Method: checkForStoryUpdates");
         if (Constants.story24HoursPk.isEmpty())
             Constants.story24HoursPk.put(Constants.latestStoryPk, new Date());
@@ -145,19 +145,19 @@ public class INST_API {
             long currentStoryPk = stories.get(i).getPk();
             if (!Constants.story24HoursPk.containsKey(currentStoryPk)) {
                 InstagramStory currentStory = createInstagramStory(stories.get(i));
-                while (currentStory.getUser() == null)
-                    currentStory = createInstagramStory(stories.get(i));
+                if (currentStory.getUser() == null)
+                    currentStory = getUserStoryByPk(currentStoryPk);
                 Constants.story24HoursPk.put(currentStoryPk, currentStory.getDate());
                 notUpdatedStories.add(currentStory);
             }
         }
         System.out.println("Method: checkForStoryUpdates - ending");
+        String[] answer = new String[2];
         if (notUpdatedStories.size() >= 1) {
-            for (int i = 0; i < notUpdatedStories.size() - 1; i++)
-                TELEGRAM_API.postingStoryNotification(notUpdatedStories.get(i));//VK_API.postStory(notUpdatedStories.get(i));
-            return notUpdatedStories.get(notUpdatedStories.size()-1);
+            answer[1] = TELEGRAM_API.postingStoriesNotification(notUpdatedStories.toArray(InstagramStory[]::new));
+            answer[0] = notUpdatedStories.get(notUpdatedStories.size()-1).getPk() + "";
+            return answer;
         }
-
         return null;
     }
 
@@ -270,21 +270,39 @@ public class INST_API {
 
     public static InstagramPost getUserPostByLink(String link) {
         String postCode = link.split("/")[4];
-        System.out.println("Method: getUserPostByLink - response");
+        System.out.println("Method: getUserPostByLink");
+        return getUserPostByPk(postCode);
+    }
+
+    private static InstagramPost getUserPostByPk (long pk) {
+        IGRequest request =  new MediaInfoRequest(pk + "");
+        MediaInfoResponse response = (MediaInfoResponse) sendRequest(request);
+        TimelineMedia post = response.getItems().get(0);
+        return createInstagramPost(post);
+    }
+
+    private static InstagramPost getUserPostByPk (String postCode) {
         IGRequest request =  new MediaInfoRequest(IGUtils.fromCode(postCode) + "");
         MediaInfoResponse response = (MediaInfoResponse) sendRequest(request);
         TimelineMedia post = response.getItems().get(0);
-        System.out.println("Method: getUserPostByLink - ending");
         return createInstagramPost(post);
     }
 
     public static InstagramStory getUserStoryByLink(String link) {
         String storyCode = link.split("/")[5].split("\\?")[0];
         System.out.println("Method: getUserStoryByLink");
-        IGRequest request = new MediaInfoRequest(storyCode + "");
+        return getUserStoryByPk(storyCode);
+    }
+
+    private static InstagramStory getUserStoryByPk(String pk) {
+        IGRequest request = new MediaInfoRequest(pk + "");
         MediaInfoResponse response = (MediaInfoResponse) sendRequest(request);
         TimelineMedia reel = response.getItems().get(0);
         return getInstagramStory(reel);
+    }
+
+    private static InstagramStory getUserStoryByPk(long pk) {
+        return getUserStoryByPk(pk + "");
     }
 
     public static InstagramReel getUserReelByLink(String link) {
@@ -411,26 +429,58 @@ public class INST_API {
         return response;
     }
 
-    public static void randmonTask() {
+    private static String[] randomAccounts = new String[] {
+            "doverchivost", "terimlxx", "puppyradio", "paxxword97", "cifika_",
+            "bizzionary", "eztag_", "maalib", "xocktar", "qqqtheqqq", "ann_darc", "khyosangjin",
+            "hashblanccoa", "sogumm", "nucksal", "kiff_vinxen", "deantrbl", "drunkentigerjk", "hunjiya",
+            "spotify", "nigo", "moresojuplease", "jungjukjae", "miyayeah", "a24", "netflixkr", "donmamsuki",
+            "dmofxxkinark", "iamtouchthesky", "skeptagram", "free_miu", "layon_e", "cakeshopseoul",
+            "jiwonstein", "lalalalisa_m", "feliciathegoat", "hypebeast", "yoon_ambush", "udtbro", "heizeheize",
+            "berrics", "xodambi", "honjowolf", "jooyong", "dindinem", "anyovann", "jayho"
+    };
+
+    public static void randomTask() {
         try {
             //разннобразить: рандомные действия при вызове
             //вызвать как TimerTask
-            int random = new Random().nextInt(5);
-            instagram.actions().account().currentUser().get().getUser().getFollower_count();
+            int random = new Random().nextInt(8);
             switch (random) {
                 case 1:
                     new FeedTimelineRequest().execute(instagram)
                             .thenAccept(response -> {
                                 response.getFeed_items();
                             }).join();
+                    break;
                 case 2:
                     new AccountsCurrentUserRequest().execute(instagram).join();
+                    break;
                 case 3:
-                    new UsersUsernameInfoRequest("doverchivost").execute(instagram).join();
-                case 4:
                     new DiscoverTopicalExploreRequest().execute(instagram).join();
-                case 5:
+                    break;
+                case 4:
                     instagram.actions().users().findByUsername("instagram").join();
+                    break;
+                case 5:
+                    instagram.actions().account().currentUser().get().getUser().getFollower_count();
+                    break;
+                case 6:
+                    new AccountsCurrentUserRequest().execute(instagram).join();
+                    break;
+                case 7:
+                    int random1 = new Random().nextInt(4);
+                    int random2 = new Random().nextInt(randomAccounts.length) - 1;
+                    IGRequest request = new UsersUsernameInfoRequest(randomAccounts[random2]);
+                    long response = ((UserResponse) sendRequest(request)).getUser().getPk();
+                    switch (random1) {
+                        case 1:
+                            getPostsByUserPk(response);
+                        case 2:
+                            getStoriesByUserPk(response);
+                        case 3:
+                            getStoriesByUserPk(response);
+                            getPostsByUserPk(response);
+                    }
+                    break;
             }
         }
         catch (Exception e) {}

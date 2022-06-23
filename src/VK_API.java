@@ -14,12 +14,45 @@ import com.vk.api.sdk.objects.video.responses.VideoUploadResponse;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class VK_API {
 
     private static VkApiClient vk = Vk.getVk();
     //private static GroupActor groupActor = Vk.getGroupActor();
     private static UserActor userActor = Vk.getUserActor();
+
+    public static void postStory(InstagramStory[] stories) throws ClientException, ApiException {
+        if (stories.length == 1) postStory(stories[0]);
+        else {
+            List<String> attachments =  new ArrayList<>();
+            boolean main = false;
+            String captionForWall = "Сториз\n\n";
+
+            for (int i = 0; i < stories.length; i++) {
+                InstagramStory story = stories[i];
+                String user = story.getUser();
+                if (user.equals(Constants.main_account_username)) main = true;
+                int version = story.getVersion();
+                File media = story.getMedia();
+                String formattedDate = Constants.dateFormat(story.getDate());
+                String caption = "Стори " + user;
+                captionForWall += (user.equals(Constants.main_account_username) ? Constants.getMain_account_name : user)
+                        + " (" + formattedDate + ")\n";
+                String attachment = postMediaLink(user, version, media, caption, formattedDate);
+                attachments.add(attachment);
+            }
+            if (main)
+                captionForWall += "\n" + Constants.main_account_tags;
+            else
+                captionForWall += "\n" + Constants.other_tags;
+
+            vk.wall().post(userActor).fromGroup(true)
+                    .ownerId(-Constants.vk_group_id).signed(false)
+                    .message(captionForWall)
+                    .attachments(attachments).execute();
+        }
+    }
 
     public static void postStory(InstagramStory story) throws ClientException, ApiException {
         String attachment;
@@ -34,7 +67,6 @@ public class VK_API {
         if (user.equals(Constants.main_account_username)) {
             postCaption = "Стори " + Constants.getMain_account_name +
                     " (" + formattedDate + ")\n\n" + Constants.main_account_tags;
-
         } else {
             postCaption = "Стори " + user +
                     " (" + formattedDate + ")\n\n" + Constants.other_tags;
@@ -43,6 +75,35 @@ public class VK_API {
                 .ownerId(-Constants.vk_group_id).signed(false)
                 .message(postCaption)
                 .attachments(attachment).execute();
+    }
+
+    public static void postPost(InstagramPost post, Set<Integer> indexes) throws ClientException, ApiException {
+        List<String> attachments =  new ArrayList<>();
+        String user = post.getUser();
+        String formattedDate = Constants.dateFormat(post.getDate());
+
+        int[] versions = post.getVersions();
+        File[] medias = post.getMedia();
+        String message_in_post = post.getCaption();
+        String caption = "Из поста " + user + ": " + message_in_post;
+
+        for (int i : indexes) {
+            i--;
+            int currentMediaVersion = versions[i];
+            File currentMedia = medias[i];
+            attachments.add(postMediaLink(user, currentMediaVersion, currentMedia, caption, formattedDate));
+        }
+
+        String translatedMessage = message_in_post;
+        if (message_in_post.length() > 1 )
+            translatedMessage = post.getTranslatedCaption();
+
+        String postCaption = "Медиа из поста " + user + "\n\n" + translatedMessage +
+                "\n\n" + Constants.other_tags;
+
+        vk.wall().post(userActor).fromGroup(true)
+                .ownerId(-Constants.vk_group_id).signed(false)
+                .message(postCaption).attachments(attachments).execute();
     }
 
     public static void postPost(InstagramPost post) throws ClientException, ApiException {
@@ -96,7 +157,6 @@ public class VK_API {
         if (user.equals(Constants.main_account_username)) {
             postCaption = "Рилс " + Constants.getMain_account_name + "\n\n" + translatedMessage
                     + "\n\n" + Constants.main_account_tags;
-
         } else {
             postCaption = "Рилс " + user + "\n\n" + translatedMessage
                     + "\n\n" + Constants.other_tags;

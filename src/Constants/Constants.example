@@ -69,6 +69,8 @@ public class Constants {
     //Google Scripts
     public static final String googleScriptUrl = "https://script.google.com/macros/s/...";
 
+    public static String herokuAppName = "appname";
+
     public static String dateFormat(Date date) {
         SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm z");
         format.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
