@@ -176,6 +176,33 @@ public class VK_API {
                 .message(postCaption).attachments(attachment).execute();
     }
 
+    public static void postVideoFromYouTube(String youtubeUrl, String message) throws ClientException, ApiException {
+        SaveResult videoSaveResult = vk.videos().save(userActor)
+                .link(youtubeUrl).groupId(Constants.vk_group_id)
+                .execute();
+        try {
+            URL url = new URL(videoSaveResult.getUploadUrl());
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            InputStreamReader streamReader = new InputStreamReader(con.getInputStream());
+            try (BufferedReader lineReader = new BufferedReader(streamReader)) {
+                StringBuilder responseBody = new StringBuilder();
+                String line;
+                while ((line = lineReader.readLine()) != null) {
+                    responseBody.append(line);
+                }
+                System.out.println(responseBody);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        vk.wall().post(userActor).fromGroup(true).ownerId(-Constants.vk_group_id).signed(false)
+                .message(message).attachments(Constants.groupVideos + videoSaveResult.getVideoId())
+                .execute();
+    }
+
     private static String postMediaLink (String user, int version, File media,
                                          String caption, String date) {
         String attachment = null;

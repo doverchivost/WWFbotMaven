@@ -74,13 +74,12 @@ public class TELEGRAM_API {
             Constants.hasDigits = true;
             return "Шестизначный код обработан";
         }
-        if (message.contains("instagram.com/")) {
+        if (message.contains("instagram.com/") || message.contains("youtu.be") || message.contains("youtube.com")) {
             String answer = TELEGRAM_API.responseTelegram(message);
             if (answer != Constants.successStory && answer != Constants.successPost
-                    && answer != Constants.successReel) {
+                    && answer != Constants.successReel && answer != Constants.successYoutube) {
                 answer += "\n\nК сожалению, сейчас я не могу обработать ваш запрос.\n" +
-                        "Пожалуйста, попытайтесь позже.\n\n" +
-                        Constants.getStackTrace();
+                        "Пожалуйста, попытайтесь позже.\n\n";
             }
             return answer;
         }
@@ -116,8 +115,19 @@ public class TELEGRAM_API {
 
     private static String responseTelegram(String message) {
         String answer = "";
-
-        if (message.length() < 30)
+        if (message.contains("youtu.be") || message.contains("youtube.com")) {
+            String[] msg = message.split("\n");
+            String youtubeUrl = "";
+            String messagePost = "";
+            for (String m : msg) {
+                if (m.contains("youtu.be") || m.contains("youtube.com"))
+                    youtubeUrl = m.trim();
+                else
+                    if (!m.isBlank())
+                        messagePost = m.trim();
+            }
+            answer = postingVideoFromYoutube(youtubeUrl, messagePost);
+        } else if (message.length() < 30)
             answer = "Ты отправил что-то не то. Попробуй еще раз.";
         else {
             if (message.contains("/stories/")) {
@@ -179,6 +189,29 @@ public class TELEGRAM_API {
         }
 
         return answer;
+    }
+
+    public static String postingVideoFromYoutube(String youtubeUrl, String message) {
+        StringJoiner joiner = new StringJoiner("\n\n");
+        boolean successVK = false;
+        boolean successTG = false;
+
+        try {
+            VK_API.postVideoFromYouTube(youtubeUrl, message);
+            successVK = true;
+        } catch (Exception e) {
+            joiner.add("Не удалось опубликовать видео в вк\n\n" + e.getMessage() + "\n\n" + Constants.getStackTrace());
+        }
+
+        try {
+            ChannelPosting.sendVideoLink(youtubeUrl, message);
+            successTG = true;
+        } catch (Exception e) {
+            joiner.add("Не удалось опубликовать пост в тг\n\n" + e.getMessage() + "\n\n" + Constants.getStackTrace());
+        }
+
+        if (successTG && successVK) return Constants.successYoutube;
+        return joiner.toString();
     }
 
     public static String postingPostNotification (InstagramPost post)  {

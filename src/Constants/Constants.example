@@ -28,6 +28,7 @@ public class Constants {
     public static final int vk_group_id = 123456789;
     public static final int photo_album_main = 123456789;
     public static final int photo_album_others = 987654321;
+    public static final String postLink = "https://vk.com/woowithfriends?w=wall-" + vk_group_id + "_";
 
     public static final String vk_admin_token = "vk_admin_token";
     public static final int vk_admin_id = 123456789;
@@ -51,6 +52,7 @@ public class Constants {
     public static final String successPost = "post posted on vk and channel";
     public static final String successStory = "story posted on vk and channel";
     public static final String successReel = "reel posted on vk and channel";
+    public static final String successYoutube = "video posted on vk and channel";
 
     public static final int postUpdateInitialDelay = 15*60*1000;
     public static final int storyUpdateInitialDelay = 10*60*1000;

@@ -128,4 +128,9 @@ public class ChannelPosting {
                 "Ссылка на оригинальный пост: " + instLink;
         bot.execute(new SendMessage(Constants.channelId, msg));
     }
+
+    public static void sendVideoLink(String youtubeUrl, String message) {
+        String msg = message + "\n\n" + youtubeUrl;
+        bot.execute(new SendMessage(Constants.channelId, msg));
+    }
 }
