@@ -9,9 +9,16 @@ import com.vk.api.sdk.exceptions.ApiException;
 import com.vk.api.sdk.exceptions.ClientException;
 import com.vk.api.sdk.objects.photos.Photo;
 import com.vk.api.sdk.objects.photos.responses.PhotoUploadResponse;
+import com.vk.api.sdk.objects.video.SaveResult;
 import com.vk.api.sdk.objects.video.responses.VideoUploadResponse;
+import com.vk.api.sdk.objects.wall.responses.PostResponse;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -77,7 +84,7 @@ public class VK_API {
                 .attachments(attachment).execute();
     }
 
-    public static void postPost(InstagramPost post, Set<Integer> indexes) throws ClientException, ApiException {
+    public static String postPost(InstagramPost post, Set<Integer> indexes) throws ClientException, ApiException {
         List<String> attachments =  new ArrayList<>();
         String user = post.getUser();
         String formattedDate = Constants.dateFormat(post.getDate());
@@ -101,12 +108,13 @@ public class VK_API {
         String postCaption = "Медиа из поста " + user + "\n\n" + translatedMessage +
                 "\n\n" + Constants.other_tags;
 
-        vk.wall().post(userActor).fromGroup(true)
+        PostResponse postVK = vk.wall().post(userActor).fromGroup(true)
                 .ownerId(-Constants.vk_group_id).signed(false)
                 .message(postCaption).attachments(attachments).execute();
+        return Constants.postLink + postVK.getPostId();
     }
 
-    public static void postPost(InstagramPost post) throws ClientException, ApiException {
+    public static String postPost(InstagramPost post) throws ClientException, ApiException {
         List<String> attachments =  new ArrayList<>();
         String user = post.getUser();
         String formattedDate = Constants.dateFormat(post.getDate());
@@ -136,9 +144,10 @@ public class VK_API {
                     + "\n\n" + Constants.other_tags;
 
         }
-        vk.wall().post(userActor).fromGroup(true)
+        PostResponse postVK = vk.wall().post(userActor).fromGroup(true)
                 .ownerId(-Constants.vk_group_id).signed(false)
                 .message(postCaption).attachments(attachments).execute();
+        return Constants.postLink + postVK.getPostId();
     }
 
     public static void postReel(InstagramReel reel) throws ClientException, ApiException {

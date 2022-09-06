@@ -120,4 +120,12 @@ public class ChannelPosting {
                 "\n\n" + date;
         bot.execute(new SendVideo(Constants.channelId, item.getVideo()).caption(msg));
     }
+
+    public static void sendLinks(String vkLink, String instLink) {
+        System.out.println("Posting Links to Channel");
+        String msg = "Не удается опубликовать пост в тг-канал\n\n" +
+                "Ссылка на пост в вк: " + vkLink + "\n\n" +
+                "Ссылка на оригинальный пост: " + instLink;
+        bot.execute(new SendMessage(Constants.channelId, msg));
+    }
 }

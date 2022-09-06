@@ -7,8 +7,6 @@ import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
-import com.vk.api.sdk.exceptions.ApiException;
-import com.vk.api.sdk.exceptions.ClientException;
 
 import java.io.File;
 import java.io.IOException;
@@ -132,6 +130,7 @@ public class TELEGRAM_API {
                     try {
                         for (int i = 0; i < links.length; i++) {
                             InstagramStory story = INST_API.getUserStoryByLink(links[i]);
+                            story.setLink(links[i]);
                             storiesToPost[i] = story;
                         }
                         answer = postingStoriesNotification(storiesToPost);
@@ -142,7 +141,9 @@ public class TELEGRAM_API {
             }
             else if (message.contains("/p/") || message.contains("/tv/")) {
                 try {
+                    String originalLink = message.split(" ")[0];
                     InstagramPost post = INST_API.getUserPostByLink(message);
+                    post.setLink(originalLink);
                     if (message.split(" ").length > 1) {
                         int i = message.indexOf(" ") + 1;
                         String[] inds = message.substring(i).split(",");
@@ -166,6 +167,7 @@ public class TELEGRAM_API {
             else if (message.contains("/reel/")) {
                 try {
                     InstagramReel reel = INST_API.getUserReelByLink(message);
+                    reel.setLink(message);
                     answer = postingReelNotification(reel);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -182,20 +184,31 @@ public class TELEGRAM_API {
     public static String postingPostNotification (InstagramPost post)  {
         if (post.getUser() == null) return "Null Pointer Exception >_<" + Constants.getStackTrace();
 
-        String answer;
+        StringJoiner joiner = new StringJoiner("\n\n");
+        boolean successVK = false;
+        boolean successTG = false;
+        String vkLink = null;
+        try {
+            vkLink = VK_API.postPost(post);
+            successVK = true;
+        } catch (Exception e) {
+            joiner.add("Не удалось опубликовать пост в вк\n\n" + e.getMessage() + "\n\n" + Constants.getStackTrace());
+        }
+
         try {
             ChannelPosting.sendMessageToChannel(post);
-            VK_API.postPost(post);
-            answer = Constants.successPost;
-        } catch (ClientException | ApiException e) {
-            answer = "Не удалось опубликовать пост в вк\n\n" + e.getMessage() + "\n\n" + Constants.getStackTrace();
+            successTG = true;
         } catch (Exception e) {
-            answer = "Что-то пошло не так\n\n" + e.getMessage() + "\n\n" + Constants.getStackTrace();
+            joiner.add("Не удалось опубликовать пост в тг\n\n" + e.getMessage() + "\n\n" + Constants.getStackTrace());
+            if (vkLink != null)
+                ChannelPosting.sendLinks(vkLink, post.getLink());
         } finally {
             for (File f : post.getMedia())
                 f.delete();
         }
-        return answer;
+
+        if (successTG && successVK) return Constants.successPost;
+        return joiner.toString();
     }
 
     public static String postingPostNotification (InstagramPost post, Set<Integer> indexes)  {
@@ -205,20 +218,31 @@ public class TELEGRAM_API {
             if (index > post.getMediaCount())
                 return "Заданы неверные индексы для публикации медиа из поста";
 
-        String answer;
+        StringJoiner joiner = new StringJoiner("\n\n");
+        boolean successVK = false;
+        boolean successTG = false;
+        String vkLink = null;
+        try {
+            vkLink = VK_API.postPost(post, indexes);
+            successVK = true;
+        } catch (Exception e) {
+            joiner.add("Не удалось опубликовать пост в вк\n\n" + e.getMessage() + "\n\n" + Constants.getStackTrace());
+            if (vkLink != null)
+                ChannelPosting.sendLinks(vkLink, post.getLink());
+        }
+
         try {
             ChannelPosting.sendMessageToChannel(post, indexes);
-            VK_API.postPost(post, indexes);
-            answer = Constants.successPost;
-        } catch (ClientException | ApiException e) {
-            answer = "Не удалось опубликовать пост в вк\n\n" + e.getMessage() + "\n\n" + Constants.getStackTrace();
+            successTG = true;
         } catch (Exception e) {
-            answer = "Что-то пошло не так\n\n" + e.getMessage() + "\n\n" + Constants.getStackTrace();
+            joiner.add("Не удалось опубликовать пост в тг\n\n" + e.getMessage() + "\n\n" + Constants.getStackTrace());
         } finally {
             for (File f : post.getMedia())
                 f.delete();
         }
-        return answer;
+
+        if (successTG && successVK) return Constants.successPost;
+        return joiner.toString();
     }
 
     public static String postingStoriesNotification (InstagramStory[] stories) {
@@ -226,38 +250,55 @@ public class TELEGRAM_API {
             if (story.getUser() == null)
                 return "Null Pointer Exception >_<" + Constants.getStackTrace();
         }
-        String answer;
+
+        StringJoiner joiner = new StringJoiner("\n\n");
+        boolean successVK = false;
+        boolean successTG = false;
+        try {
+            VK_API.postStory(stories);
+            successVK = true;
+        } catch (Exception e) {
+            joiner.add("Не удалось опубликовать стори в вк\n\n" + e.getMessage() + "\n\n" + Constants.getStackTrace());
+        }
+
         try {
             ChannelPosting.sendMessageToChannel(stories);
-            VK_API.postStory(stories);
-            answer = Constants.successStory;
-        } catch (ClientException | ApiException e) {
-            answer = "Не удалось опубликовать стори в вк\n\n" + e.getMessage() + "\n\n" + Constants.getStackTrace();
+            successTG = true;
         } catch (Exception e) {
-            answer = "Что-то пошло не так\n\n" + e.getMessage() + "\n\n" + Constants.getStackTrace();
+            joiner.add("Не удалось опубликовать стори в тг\n\n" + e.getMessage() + "\n\n" + Constants.getStackTrace());
         } finally {
             for (InstagramStory story : stories)
                 story.getMedia().delete();
         }
-        return answer;
+
+        if (successTG && successVK) return Constants.successStory;
+        return joiner.toString();
     }
 
     public static String postingReelNotification (InstagramReel reel) {
         if (reel.getUser() == null)
             return "Null Pointer Exception >_<" + Constants.getStackTrace();
 
-        String answer;
+        StringJoiner joiner = new StringJoiner("\n\n");
+        boolean successVK = false;
+        boolean successTG = false;
+        try {
+            VK_API.postReel(reel);
+            successVK = true;
+        } catch (Exception e) {
+            joiner.add("Не удалось опубликовать рил в вк\n\n" + e.getMessage() + "\n\n" + Constants.getStackTrace());
+        }
+
         try {
             ChannelPosting.sendMessageToChannel(reel);
-            VK_API.postReel(reel);
-            answer = Constants.successReel;
-        } catch (ClientException | ApiException e) {
-            answer = "Не удалось опубликовать рил в вк \n\n" + e.getMessage() + "\n\n" + Constants.getStackTrace();;
+            successTG = true;
         } catch (Exception e) {
-            answer = "Что-то пошло не так\n\n" + e.getMessage() + "\n\n" + Constants.getStackTrace();
+            joiner.add("Не удалось опубликовать рил в тг\n\n" + e.getMessage() + "\n\n" + Constants.getStackTrace());
         } finally {
             reel.getVideo().delete();
         }
-        return answer;
+
+        if (successTG && successVK) return Constants.successReel;
+        return joiner.toString();
     }
 }
