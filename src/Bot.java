@@ -6,20 +6,20 @@ import java.util.concurrent.TimeUnit;
 
 public class Bot {
 
-    private final static TimerTask timerPosts = new TaskPostsCheck();
+    /*private final static TimerTask timerPosts = new TaskPostsCheck();
     private final static TimerTask timerStories = new TaskStoriesCheck();
     private final static TimerTask timerRandom = new TaskRandomAction();
     private final static Timer updatePosts = new Timer("TimerUpdatePosts");
     private final static Timer updateStories = new Timer("TimerUpdateStories");
-    private final static Timer randomTimer = new Timer("RandomTimer");
+    private final static Timer randomTimer = new Timer("RandomTimer");*/
 
     public static void main(String[] args) throws IOException {
         TELEGRAM_API.telegramAddListener();
         initializeVariables();
         INST_API.start();
-        updatePosts.schedule(timerPosts, Constants.postUpdateInitialDelay);
+        /*updatePosts.schedule(timerPosts, Constants.postUpdateInitialDelay);
         updateStories.schedule(timerStories, Constants.storyUpdateInitialDelay);
-        randomTimer.schedule(timerRandom, Constants.randomInitialDelay);
+        randomTimer.schedule(timerRandom, Constants.randomInitialDelay);*/
     }
 
     private static void initializeVariables() throws IOException {
@@ -61,7 +61,7 @@ public class Bot {
         };
     }
 
-    static class TaskRandomAction extends TimerTask {
+    /*static class TaskRandomAction extends TimerTask {
         @Override
         public void run() {
             int delay = Constants.randomDelayFrom + new Random().nextInt(Constants.randomDelayTo);
@@ -107,13 +107,13 @@ public class Bot {
                 e.printStackTrace();
                 //Instagram.reLogin();
                 delay = 60 * 60 * 1000;
-                String msg = "Ошибка в проверке сториз. Сториз будут проверены через час.";
+                String msg = "Ошибка в проверке сториз. Сториз будут проверены через час.\n\n" + e.getMessage();
                 TELEGRAM_API.notifyMainAdmin(msg);
             }
             System.out.println("Next task for Stories in: " + delay/1000 + " s.");
             updateStories.schedule(new TaskStoriesCheck(), delay);
         }
-    }
+    }*/
 
     private static long readPk(File file) throws IOException {
         FileInputStream stream = new FileInputStream(file);

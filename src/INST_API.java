@@ -4,7 +4,7 @@ import InstagramItems.InstagramReel;
 import InstagramItems.InstagramStory;
 import Singletons.Instagram;
 import com.github.instagram4j.instagram4j.IGClient;
-import com.github.instagram4j.instagram4j.exceptions.IGResponseException;
+import com.github.instagram4j.instagram4j.models.feed.Reel;
 import com.github.instagram4j.instagram4j.models.media.reel.ReelImageMedia;
 import com.github.instagram4j.instagram4j.models.media.reel.ReelMedia;
 import com.github.instagram4j.instagram4j.models.media.reel.ReelVideoMedia;
@@ -15,37 +15,63 @@ import com.github.instagram4j.instagram4j.requests.discover.DiscoverTopicalExplo
 import com.github.instagram4j.instagram4j.requests.feed.FeedTimelineRequest;
 import com.github.instagram4j.instagram4j.requests.feed.FeedUserRequest;
 import com.github.instagram4j.instagram4j.requests.feed.FeedUserStoryRequest;
+import com.github.instagram4j.instagram4j.requests.friendships.FriendshipsActionRequest;
+import com.github.instagram4j.instagram4j.requests.friendships.FriendshipsShowRequest;
 import com.github.instagram4j.instagram4j.requests.media.MediaInfoRequest;
+import com.github.instagram4j.instagram4j.requests.media.MediaSeenRequest;
 import com.github.instagram4j.instagram4j.requests.users.UsersUsernameInfoRequest;
 import com.github.instagram4j.instagram4j.responses.IGResponse;
 import com.github.instagram4j.instagram4j.responses.feed.FeedUserResponse;
 import com.github.instagram4j.instagram4j.responses.feed.FeedUserStoryResponse;
+import com.github.instagram4j.instagram4j.responses.friendships.FriendshipsShowResponse;
 import com.github.instagram4j.instagram4j.responses.media.MediaInfoResponse;
 import com.github.instagram4j.instagram4j.responses.users.UserResponse;
 import com.github.instagram4j.instagram4j.utils.IGUtils;
 import com.vk.api.sdk.exceptions.ApiException;
 import com.vk.api.sdk.exceptions.ClientException;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 
 public class INST_API {
 
     private static long main_account_pk = 0;
     private static IGClient instagram = Instagram.getInstagram();
+    private static LinkedHashMap<String, List<ReelMedia>> stories;
 
+    /**     START     **/
     public static void start() {
         System.out.println("Method: start - beginning");
+        if (Constants.main_account_username.equals("munchinthepool")) {
+            main_account_pk = 1819739099;
+        } else {
+            getUserPk(Constants.main_account_username);
+        }
 
-        main_account_pk = getUserPk(Constants.main_account_username);
-        //ДЛЯ ВОНДЖЕ: main_account_pk = 1819739099;
+        stories = new LinkedHashMap<>() {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<String, List<ReelMedia>> eldest) {
+                return this.size() > 50;
+            }
+        };
 
-        List<TimelineMedia> posts = getPostsByUserPk(main_account_pk);
+        startWithoutTasks();
+
+        System.out.println("Method: start - ending");
+    }
+
+    private static void startWithoutTasks() {
+        Constants.post5latestPk.put(Constants.latestPostPk, new Date());
+        Constants.story24HoursPk.put(Constants.latestStoryPk, new Date());
+    }
+
+    private static void startWithTasks() {
+    /*    List<TimelineMedia> posts = getPostsByUserPk(main_account_pk);
         if (posts != null) {
             int postCount = 4;
             if (posts.size() < 5) postCount = posts.size() - 1;
@@ -56,7 +82,7 @@ public class INST_API {
             Constants.latestPostPk = 0;
             Constants.post5latestPk.put(Constants.latestPostPk, new Date());
         }
-        
+
         if (Constants.latestPostPk != 0)
             Constants.post5latestPk.put(Constants.latestPostPk, new Date());
 
@@ -69,37 +95,10 @@ public class INST_API {
             Constants.latestStoryPk = 0;
 
         if (Constants.latestStoryPk != 0)
-            Constants.story24HoursPk.put(Constants.latestStoryPk, new Date());
-
-        System.out.println("Method: start - ending");
+            Constants.story24HoursPk.put(Constants.latestStoryPk, new Date());*/
     }
 
-    private static long getUserPk(String username)  {
-        System.out.println("Method: getUserPk");
-        IGRequest request = new UsersUsernameInfoRequest(username);
-        UserResponse response = (UserResponse) sendRequest(request);
-        long userPk = response.getUser().getPk();
-        return userPk;
-    }
-
-    private static List<TimelineMedia> getPostsByUserPk(long pk) {
-        System.out.println("Method: getPostsByUserPk");
-        IGRequest request = new FeedUserRequest(pk);
-        FeedUserResponse response = (FeedUserResponse) sendRequest(request);
-        if (response.getItems() != null && !response.getItems().isEmpty())
-            return response.getItems();
-        return null;
-    }
-
-    private static List<ReelMedia> getStoriesByUserPk(long pk) {
-        System.out.println("Method: getStoriesByUserPk");
-        IGRequest request = new FeedUserStoryRequest(pk);
-        FeedUserStoryResponse response = (FeedUserStoryResponse) sendRequest(request);
-        if (response.getReel() != null && !response.getReel().getItems().isEmpty())
-            return response.getReel().getItems();
-        return null;
-    }
-
+    /**     CHECKS     **/
     public static String[] checkForPostUpdates() throws ClientException, ApiException {
         System.out.println("Method: checkForPostUpdates");
         System.out.println("Method: checkForPostUpdates - getPostsByUserPk");
@@ -141,6 +140,7 @@ public class INST_API {
         ArrayList<InstagramStory> notUpdatedStories = new ArrayList<>();
         if (stories == null) return null;
 
+        sendRequest(new MediaSeenRequest(stories));
         for (int i = 0; i < stories.size(); i++) {
             long currentStoryPk = stories.get(i).getPk();
             if (!Constants.story24HoursPk.containsKey(currentStoryPk)) {
@@ -161,6 +161,118 @@ public class INST_API {
         return null;
     }
 
+    /**     USERS     **/
+    private static long getUserPk(String username)  {
+        System.out.println("Method: getUserPk");
+        IGRequest request = new UsersUsernameInfoRequest(username);
+        UserResponse response = (UserResponse) sendRequest(request);
+        long userPk = response.getUser().getPk();
+        return userPk;
+    }
+
+    /**     POSTS     **/
+    public static InstagramPost getUserPostByLink(String link) {
+        String postCode = link.split("/")[4];
+        System.out.println("Method: getUserPostByLink");
+        return getUserPostByPk(postCode);
+    }
+
+    private static InstagramPost getUserPostByPk (long pk) {
+        IGRequest request =  new MediaInfoRequest(pk + "");
+        MediaInfoResponse response = (MediaInfoResponse) sendRequest(request);
+        TimelineMedia post = response.getItems().get(0);
+        return createInstagramPost(post);
+    }
+
+    private static InstagramPost getUserPostByPk (String postCode) {
+        IGRequest request =  new MediaInfoRequest(IGUtils.fromCode(postCode) + "");
+        MediaInfoResponse response = (MediaInfoResponse) sendRequest(request);
+        TimelineMedia post = response.getItems().get(0);
+        return createInstagramPost(post);
+    }
+
+    private static List<TimelineMedia> getPostsByUserPk(long pk) {
+        System.out.println("Method: getPostsByUserPk");
+        IGRequest request = new FeedUserRequest(pk);
+        FeedUserResponse response = (FeedUserResponse) sendRequest(request);
+        if (response.getItems() != null && !response.getItems().isEmpty())
+            return response.getItems();
+        return null;
+    }
+
+    /**     STORIES     **/
+    public static InstagramStory getUserStoryByLink(String link) {
+        /*String storyCode = link.split("/")[5].split("\\?")[0];
+        System.out.println("Method: getUserStoryByLink");
+        return getUserStoryByPk(storyCode);*/
+        String username = link.split("/")[4];
+        long storyCode = Long.parseLong(link.split("/")[5].split("\\?")[0]);
+
+        if (stories.containsKey(username)) {
+            for (ReelMedia reel : stories.get(username)) {
+                if (reel.getPk() == storyCode)
+                    return createInstagramStory(reel);
+            }
+        }
+
+        long userPk = getUserPk(username);
+
+        IGRequest request = new FeedUserStoryRequest(userPk);
+        FeedUserStoryResponse response = (FeedUserStoryResponse) sendRequest(request);
+
+        List<ReelMedia> storiesList = response.getReel().getItems();
+        stories.put(username, storiesList);
+
+        for (ReelMedia reel : storiesList) {
+            if (reel.getPk() == storyCode) {
+                return createInstagramStory(reel);
+            }
+        }
+        return null;
+    }
+
+    private static InstagramStory getUserStoryByPk(String pk) {
+        IGRequest request = new MediaInfoRequest(pk + "");
+        MediaInfoResponse response = (MediaInfoResponse) sendRequest(request);
+        TimelineMedia reel = response.getItems().get(0);
+        //todo seen story
+        //new MediaSeenRequest(response.getItems());
+        return createInstagramStory(reel);
+    }
+
+    private static InstagramStory getUserStoryByPk(long pk) {
+        return getUserStoryByPk(pk + "");
+    }
+
+    private static List<ReelMedia> getStoriesByUserPk(long pk) {
+        System.out.println("Method: getStoriesByUserPk");
+        IGRequest request = new FeedUserStoryRequest(pk);
+        FeedUserStoryResponse response = (FeedUserStoryResponse) sendRequest(request);
+        if (response.getReel() != null) {
+            Reel reel = response.getReel();
+            if (!response.getReel().getItems().isEmpty()) {
+                List<ReelMedia> items = reel.getItems();
+                if (reel.getSeen() == 0) {
+                    sendRequest(new MediaSeenRequest(items));
+                    return items;
+                }
+            }
+        }
+//        if (response.getReel() != null && !response.getReel().getItems().isEmpty())
+//            return response.getReel().getItems();
+        return null;
+    }
+
+    /**     REELS     **/
+    public static InstagramReel getUserReelByLink(String link) {
+        String reelCode = link.split("/")[4];
+        IGRequest request = new MediaInfoRequest(IGUtils.fromCode(reelCode) + "");
+        MediaInfoResponse response = (MediaInfoResponse) sendRequest(request);
+        TimelineMedia reel = response.getItems().get(0);
+        return createInstagramReel(reel);
+    }
+
+    /**     INSTAGRAM ITEMS     **/
     private static InstagramPost createInstagramPost(TimelineMedia media) {
         InstagramPost instPost = new InstagramPost();
 
@@ -170,6 +282,10 @@ public class INST_API {
         instPost.setDate(date);
         String postCode = media.getCode();
         instPost.setPk(media.getPk());
+
+        if (username.equals(Constants.main_account_username)) {
+            Constants.post5latestPk.put(media.getPk(), new Date());
+        }
 
         String caption = "";
         try {
@@ -244,9 +360,15 @@ public class INST_API {
         story.setDate(reel.getTaken_at());
         long pk = reel.getPk();
         story.setPk(pk);
-        story.setUser(reel.getUser().getUsername());
+        String username = reel.getUser().getUsername();
+        story.setUser(username);
         int mediaType = Integer.parseInt(reel.getMedia_type());
         story.setVersion(mediaType);
+
+        if (username.equals(Constants.main_account_username)) {
+            Constants.story24HoursPk.put(pk, new Date());
+        }
+
         try {
             if (mediaType == 1) {
                 //photo
@@ -268,52 +390,43 @@ public class INST_API {
         return story;
     }
 
-    public static InstagramPost getUserPostByLink(String link) {
-        String postCode = link.split("/")[4];
-        System.out.println("Method: getUserPostByLink");
-        return getUserPostByPk(postCode);
+    private static InstagramStory createInstagramStory(TimelineMedia media) {
+        System.out.println("Method: createInstagramStory - beginning");
+        InstagramStory story = new InstagramStory();
+        story.setDate(media.getTaken_at());
+        long pk = media.getPk();
+        story.setPk(pk);
+        String username = media.getUser().getUsername();
+        story.setUser(username);
+        int mediaType = Integer.parseInt(media.getMedia_type());
+        story.setVersion(mediaType);
+
+        if (username.equals(Constants.main_account_username)) {
+            Constants.story24HoursPk.put(pk, new Date());
+        }
+
+        try {
+            if (mediaType == 1) {
+                //photo
+                TimelineImageMedia reelImage = ((TimelineImageMedia) media);
+                String url = reelImage.getImage_versions2().getCandidates().get(0).getUrl();
+                story.setMedia(convertURLintoFILE(url, media.getCode(), 1));
+            } else if (mediaType == 2) {
+                //video
+                TimelineVideoMedia reelVideo = ((TimelineVideoMedia) media);
+                String url = reelVideo.getVideo_versions().get(0).getUrl();
+                story.setMedia(convertURLintoFILE(url, media.getCode(), 2));
+            }
+        }
+        catch (ClassCastException e) {
+            System.out.println("Wrong casting in story!");
+            e.printStackTrace();
+        }
+        System.out.println("Method: getInstagramStory - ending");
+        return story;
     }
 
-    private static InstagramPost getUserPostByPk (long pk) {
-        IGRequest request =  new MediaInfoRequest(pk + "");
-        MediaInfoResponse response = (MediaInfoResponse) sendRequest(request);
-        TimelineMedia post = response.getItems().get(0);
-        return createInstagramPost(post);
-    }
-
-    private static InstagramPost getUserPostByPk (String postCode) {
-        IGRequest request =  new MediaInfoRequest(IGUtils.fromCode(postCode) + "");
-        MediaInfoResponse response = (MediaInfoResponse) sendRequest(request);
-        TimelineMedia post = response.getItems().get(0);
-        return createInstagramPost(post);
-    }
-
-    public static InstagramStory getUserStoryByLink(String link) {
-        String storyCode = link.split("/")[5].split("\\?")[0];
-        System.out.println("Method: getUserStoryByLink");
-        return getUserStoryByPk(storyCode);
-    }
-
-    private static InstagramStory getUserStoryByPk(String pk) {
-        IGRequest request = new MediaInfoRequest(pk + "");
-        MediaInfoResponse response = (MediaInfoResponse) sendRequest(request);
-        TimelineMedia reel = response.getItems().get(0);
-        return getInstagramStory(reel);
-    }
-
-    private static InstagramStory getUserStoryByPk(long pk) {
-        return getUserStoryByPk(pk + "");
-    }
-
-    public static InstagramReel getUserReelByLink(String link) {
-        String reelCode = link.split("/")[4];
-        IGRequest request = new MediaInfoRequest(IGUtils.fromCode(reelCode) + "");
-        MediaInfoResponse response = (MediaInfoResponse) sendRequest(request);
-        TimelineMedia reel = response.getItems().get(0);
-        return getInstagramReel(reel);
-    }
-
-    private static InstagramReel getInstagramReel(TimelineMedia media) {
+    private static InstagramReel createInstagramReel(TimelineMedia media) {
         InstagramReel instReel = new InstagramReel();
         instReel.setDate(media.getTaken_at());
         long pk = media.getPk();
@@ -355,80 +468,7 @@ public class INST_API {
         return caption.replace("@", "@ ").replace("#", "# ");
     }
 
-    private static InstagramStory getInstagramStory(TimelineMedia media) {
-        System.out.println("Method: createInstagramStory - beginning");
-        InstagramStory story = new InstagramStory();
-        story.setDate(media.getTaken_at());
-        long pk = media.getPk();
-        story.setPk(pk);
-        story.setUser(media.getUser().getUsername());
-        int mediaType = Integer.parseInt(media.getMedia_type());
-        story.setVersion(mediaType);
-        try {
-            if (mediaType == 1) {
-                //photo
-                TimelineImageMedia reelImage = ((TimelineImageMedia) media);
-                String url = reelImage.getImage_versions2().getCandidates().get(0).getUrl();
-                story.setMedia(convertURLintoFILE(url, media.getCode(), 1));
-            } else if (mediaType == 2) {
-                //video
-                TimelineVideoMedia reelVideo = ((TimelineVideoMedia) media);
-                String url = reelVideo.getVideo_versions().get(0).getUrl();
-                story.setMedia(convertURLintoFILE(url, media.getCode(), 2));
-            }
-        }
-        catch (ClassCastException e) {
-            System.out.println("Wrong casting in story!");
-            e.printStackTrace();
-        }
-        System.out.println("Method: getInstagramStory - ending");
-        return story;
-    }
-
-    private static IGResponse sendRequest(IGRequest<IGResponse> request) {
-        IGResponse response = null;
-        //CompletableFuture<IGResponse> req = null;
-        int status = 0;
-        int counter = 0;
-        while (status != 200) {
-            try {
-                Thread.sleep(randomSleep(), randomSleep());
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            response = request.execute(instagram).join();
-            status = response.getStatusCode();
-/*
-            try {
-                ///response = request.execute(instagram).join();//Bot.instagram.sendRequest(request).join();
-                req = instagram.sendRequest(request);
-                response = req.join();
-                status = response.getStatusCode();
-
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-                TELEGRAM_API.notifyAdmins(e.getMessage());
-                try {
-                    req.get().getError_type();
-                }
-                catch (Exception ex) {
-                    TELEGRAM_API.notifyAdmins(req);
-                }
-
-            }*/
-
-            counter++;
-            if (counter > 50) {
-                System.out.println("TOO MUCH");
-                TELEGRAM_API.notifyAdmins("Проблема с получением ответов от инстаграма. Я отключаюсь.");
-                System.exit(-1);
-            }
-        }
-        return response;
-    }
-
+    /**     RANDOM TASKS     **/
     private static String[] randomAccounts = new String[] {
             "doverchivost", "terimlxx", "puppyradio", "paxxword97", "cifika_",
             "bizzionary", "eztag_", "maalib", "xocktar", "qqqtheqqq", "ann_darc", "khyosangjin",
@@ -436,7 +476,8 @@ public class INST_API {
             "spotify", "nigo", "moresojuplease", "jungjukjae", "miyayeah", "a24", "netflixkr", "donmamsuki",
             "dmofxxkinark", "iamtouchthesky", "skeptagram", "free_miu", "layon_e", "cakeshopseoul",
             "jiwonstein", "lalalalisa_m", "feliciathegoat", "hypebeast", "yoon_ambush", "udtbro", "heizeheize",
-            "berrics", "xodambi", "honjowolf", "jooyong", "dindinem", "anyovann", "jayho"
+            "berrics", "xodambi", "honjowolf", "jooyong", "dindinem", "anyovann", "jayho",
+            "mashacreate.nails", "huskyekb", "tul_pakorn", "bb0un", "maxiiin_", "navalny"
     };
 
     public static void randomTask() {
@@ -467,23 +508,64 @@ public class INST_API {
                     new AccountsCurrentUserRequest().execute(instagram).join();
                     break;
                 case 7:
-                    int random1 = new Random().nextInt(4);
+                    int random1 = new Random().nextInt(5);
                     int random2 = new Random().nextInt(randomAccounts.length) - 1;
-                    IGRequest request = new UsersUsernameInfoRequest(randomAccounts[random2]);
-                    long response = ((UserResponse) sendRequest(request)).getUser().getPk();
+                    //IGRequest request = new UsersUsernameInfoRequest(randomAccounts[random2]);
+                    long respUserPk = getUserPk(randomAccounts[random2]);
                     switch (random1) {
                         case 1:
-                            getPostsByUserPk(response);
+                            getPostsByUserPk(respUserPk);
+                            break;
                         case 2:
-                            getStoriesByUserPk(response);
+                            getStoriesByUserPk(respUserPk);
+                            break;
                         case 3:
-                            getStoriesByUserPk(response);
-                            getPostsByUserPk(response);
+                            getStoriesByUserPk(respUserPk);
+                            getPostsByUserPk(respUserPk);
+                            break;
+                        case 4:
+/*                            IGRequest request = new UsersUsernameInfoRequest(ra);
+                            UserResponse response = (UserResponse) sendRequest(request);
+                            long userPk = response.getUser();
+                            Friendship*/
+                            boolean following = ((FriendshipsShowResponse) sendRequest((IGRequest) new FriendshipsShowRequest(respUserPk)))
+                                    .getFriendship().isFollowing();
+                            if (!following) {
+                                IGRequest follow = new FriendshipsActionRequest(respUserPk, FriendshipsActionRequest.FriendshipsAction.CREATE);
+                                sendRequest(follow);
+                            }
+                            break;
                     }
                     break;
             }
         }
         catch (Exception e) {}
+    }
+
+    /**     REQUESTS     **/
+    private static IGResponse sendRequest(IGRequest<IGResponse> request) {
+        IGResponse response = null;
+        int status = 0;
+        int counter = 0;
+        while (status != 200) {
+            try {
+                Thread.sleep(randomSleep(), randomSleep());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            //response = request.execute(instagram).join();//instagram.sendRequest(request).join();
+            response = instagram.sendRequest(request).join();
+            status = response.getStatusCode();
+
+            counter++;
+            if (counter > 50) {
+                System.out.println("TOO MUCH");
+                TELEGRAM_API.notifyAdmins("Проблема с получением ответов от инстаграма. Я отключаюсь.");
+                System.exit(-1);
+            }
+        }
+        return response;
     }
 
     private static File convertURLintoFILE(String url, String pk, int version) {
@@ -505,7 +587,14 @@ public class INST_API {
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
-        try (BufferedInputStream bis = new BufferedInputStream(url.openStream());
+        try (InputStream in = url.openStream()){
+            Files.copy(in, Path.of(file), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+        /*try (BufferedInputStream bis = new BufferedInputStream(url.openStream());
              FileOutputStream fis = new FileOutputStream(file)) {
             byte[] buffer = new byte[1024];
             int count;
@@ -514,7 +603,7 @@ public class INST_API {
             }
         } catch (IOException e) {
             e.printStackTrace();
-        }
+        }*/
     }
 
     private static int randomSleep() {
