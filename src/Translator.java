@@ -140,7 +140,7 @@ public class Translator {
     }
 
     private static String readBody(InputStream body){
-        InputStreamReader streamReader = new InputStreamReader(body);
+        InputStreamReader streamReader = new InputStreamReader(body, StandardCharsets.UTF_8);
         try (BufferedReader lineReader = new BufferedReader(streamReader)) {
             StringBuilder responseBody = new StringBuilder();
             String line;

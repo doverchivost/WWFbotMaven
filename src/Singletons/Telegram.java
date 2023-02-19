@@ -20,6 +20,7 @@ public class Telegram {
                             .okHttpClient(new OkHttpClient.Builder()
                                     .readTimeout(60, TimeUnit.SECONDS)
                                     .connectTimeout(60, TimeUnit.SECONDS)
+                                    .writeTimeout(60, TimeUnit.SECONDS)
                                     .build())
                             .build();
                 }

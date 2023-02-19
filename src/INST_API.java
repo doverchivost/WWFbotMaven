@@ -124,7 +124,7 @@ public class INST_API {
         String[] answer = new String[2];
         if (notUpdatedPosts.size() >= 1) {
             for (InstagramPost update : notUpdatedPosts)
-                answer[1] = TELEGRAM_API.postingPostNotification(update);
+                answer[1] = TELEGRAM_API.postingPostNotification(update, "");
             answer[0] = notUpdatedPosts.get(notUpdatedPosts.size()-1).getPk() + "";
             return answer;
         }
@@ -154,7 +154,7 @@ public class INST_API {
         System.out.println("Method: checkForStoryUpdates - ending");
         String[] answer = new String[2];
         if (notUpdatedStories.size() >= 1) {
-            answer[1] = TELEGRAM_API.postingStoriesNotification(notUpdatedStories.toArray(InstagramStory[]::new));
+            answer[1] = TELEGRAM_API.postingStoriesNotification(notUpdatedStories.toArray(InstagramStory[]::new), "");
             answer[0] = notUpdatedStories.get(notUpdatedStories.size()-1).getPk() + "";
             return answer;
         }
@@ -208,10 +208,14 @@ public class INST_API {
         String username = link.split("/")[4];
         long storyCode = Long.parseLong(link.split("/")[5].split("\\?")[0]);
 
+        //todo bug fix
         if (stories.containsKey(username)) {
             for (ReelMedia reel : stories.get(username)) {
-                if (reel.getPk() == storyCode)
-                    return createInstagramStory(reel);
+                if (reel.getPk() == storyCode) {
+                    InstagramStory story = createInstagramStory(reel);
+                    if (story != null) return story;
+                    break;
+                }
             }
         }
 
@@ -223,9 +227,15 @@ public class INST_API {
         List<ReelMedia> storiesList = response.getReel().getItems();
         stories.put(username, storiesList);
 
+        InstagramStory story;
+
         for (ReelMedia reel : storiesList) {
             if (reel.getPk() == storyCode) {
-                return createInstagramStory(reel);
+                story = createInstagramStory(reel);
+                if (story == null)
+                    return getUserStoryByLink(link);
+                else
+                    return story;
             }
         }
         return null;
@@ -361,6 +371,7 @@ public class INST_API {
         long pk = reel.getPk();
         story.setPk(pk);
         String username = reel.getUser().getUsername();
+        if (username == null) return null;
         story.setUser(username);
         int mediaType = Integer.parseInt(reel.getMedia_type());
         story.setVersion(mediaType);

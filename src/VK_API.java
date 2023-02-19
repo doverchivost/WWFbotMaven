@@ -7,10 +7,8 @@ import com.vk.api.sdk.client.VkApiClient;
 import com.vk.api.sdk.client.actors.UserActor;
 import com.vk.api.sdk.exceptions.ApiException;
 import com.vk.api.sdk.exceptions.ClientException;
-import com.vk.api.sdk.objects.photos.Photo;
 import com.vk.api.sdk.objects.photos.responses.PhotoUploadResponse;
-import com.vk.api.sdk.objects.video.SaveResult;
-import com.vk.api.sdk.objects.video.responses.VideoUploadResponse;
+import com.vk.api.sdk.objects.video.responses.SaveResponse;
 import com.vk.api.sdk.objects.wall.responses.PostResponse;
 
 import java.io.BufferedReader;
@@ -177,11 +175,11 @@ public class VK_API {
     }
 
     public static void postVideoFromYouTube(String youtubeUrl, String message) throws ClientException, ApiException {
-        SaveResult videoSaveResult = vk.videos().save(userActor)
-                .link(youtubeUrl).groupId(Constants.vk_group_id)
-                .execute();
+        SaveResponse videoSaveResult = vk.videos().save(userActor)
+                        .link(youtubeUrl).groupId(Constants.vk_group_id)
+                        .execute();
         try {
-            URL url = new URL(videoSaveResult.getUploadUrl());
+            URL url = videoSaveResult.getUploadUrl().toURL();
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             InputStreamReader streamReader = new InputStreamReader(con.getInputStream());
             try (BufferedReader lineReader = new BufferedReader(streamReader)) {
@@ -199,7 +197,8 @@ public class VK_API {
         }
 
         vk.wall().post(userActor).fromGroup(true).ownerId(-Constants.vk_group_id).signed(false)
-                .message(message).attachments(Constants.groupVideos + videoSaveResult.getVideoId())
+                .message(message + "\n" + Constants.video_tags)
+                .attachments(Constants.groupVideos + videoSaveResult.getVideoId())
                 .execute();
     }
 
@@ -216,11 +215,12 @@ public class VK_API {
 
             try {
                 String photoInAlbumLink = vk.photos().getUploadServer(userActor)
-                        .groupId(Constants.vk_group_id).albumId(photoAlbumID).execute().getUploadUrl();
+                        .groupId(Constants.vk_group_id).albumId(photoAlbumID).execute().getUploadUrl().toString();
 
                 PhotoUploadResponse response = vk.upload().photo(photoInAlbumLink, media).execute();
 
-                List<Photo> photoList = vk.photos().save(userActor).photosList(response.getPhotosList())
+                List<com.vk.api.sdk.objects.photos.responses.SaveResponse> photoList =
+                        vk.photos().save(userActor).photosList(response.getPhotosList())
                         .groupId(Constants.vk_group_id).albumId(photoAlbumID)
                         .server(response.getServer()).hash(response.getHash())
                         .caption(caption + "\n\n" + date).execute();
@@ -236,10 +236,10 @@ public class VK_API {
                 String videoLink = vk.videos().save(userActor)
                         .name(nameOfVideo).description(caption)
                         .groupId(Constants.vk_group_id).repeat(true)
-                        .execute().getUploadUrl();
+                        .execute().getUploadUrl().toString();
 
-                VideoUploadResponse response = vk.upload().video(videoLink, media).execute();
-                attachment = Constants.groupVideos + response.getVideoId();
+                Integer responseId = vk.upload().video(videoLink, media).execute().getVideoId();
+                attachment = Constants.groupVideos + responseId;
             } catch (ApiException  | ClientException e) {
                 e.printStackTrace();
             }

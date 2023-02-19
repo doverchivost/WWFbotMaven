@@ -5,9 +5,13 @@ import com.github.instagram4j.instagram4j.IGClient;
 import com.github.instagram4j.instagram4j.utils.IGChallengeUtils;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.request.SendMessage;
+import okhttp3.OkHttpClient;
+
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.util.concurrent.Callable;
 
 public class Instagram {
@@ -25,6 +29,14 @@ public class Instagram {
             }
         }
         return localInstagram;
+    }
+
+    public static void reLogin(String username, String password) {
+        if (!username.isBlank())
+            Constants.instagram_username = username;
+        if (!password.isBlank())
+            Constants.instagram_password = password;
+        reLogin();
     }
 
     public static void reLogin() {
@@ -54,9 +66,12 @@ public class Instagram {
                 IGChallengeUtils.resolveChallenge(client, response, inputCode);
 
         try {
+            //Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("50.174.7.158", 80));
+            //OkHttpClient httpClient = new OkHttpClient.Builder().proxy(proxy).build();
             instagram = IGClient.builder()
                     .username(Constants.instagram_username)
                     .password(Constants.instagram_password)
+                    //.client(httpClient)
                     .onTwoFactor(twoFactorHandler)
                     .onChallenge(challengeHandler)
                     .login();
