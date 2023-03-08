@@ -581,8 +581,8 @@ public class INST_API {
 
     private static File convertURLintoFILE(String url, String pk, int version) {
         File file = null;
-        if (version == 1) file = new File("media\\" + pk + ".jpg");
-        else if (version == 2) file = new File("media\\" + pk + ".mp3");
+        if (version == 1) file = new File("media/" + pk + ".jpg");
+        else if (version == 2) file = new File("media/" + pk + ".mp3");
         else {
             System.out.println("WRONG VERSION");
             System.exit(0);

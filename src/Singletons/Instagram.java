@@ -45,8 +45,8 @@ public class Instagram {
         }
     }
 
-    private static final File clientFile = new File("inst\\client.ser");
-    private static final File cookieFile = new File("inst\\cookie.ser");
+    private static final File clientFile = new File("inst/client.ser");
+    private static final File cookieFile = new File("inst/cookie.ser");
 
     private static void loginThroughPassword() {
         Callable<String> inputCode = () -> {
