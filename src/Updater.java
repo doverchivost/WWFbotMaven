@@ -20,7 +20,11 @@ public class Updater {
                     msg = "Недавно опубликованная стори пользователя уже добавлена в группу!";
                 else
                     msg = "На проверке новых сториз:\n\n" + msg;
-                TELEGRAM_API.notifyAdmins(msg);
+                try {
+                    TELEGRAM_API.notifyAdmins(msg);
+                } catch (Exception e) {
+                    System.out.println(msg);
+                }
             }
         }
         catch (ClientException | ApiException e) {
@@ -41,7 +45,11 @@ public class Updater {
                     msg = "Недавно опубликованный пост пользователя уже добавлен в группу!";
                 else
                     msg = "На проверке новых постов:\n\n" + msg;
-                TELEGRAM_API.notifyAdmins(msg);
+                try {
+                    TELEGRAM_API.notifyAdmins(msg);
+                } catch (Exception e) {
+                    System.out.println(msg);
+                }
             }
         }
         catch (ClientException | ApiException e) {

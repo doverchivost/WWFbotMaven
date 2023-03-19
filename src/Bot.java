@@ -14,9 +14,11 @@ public class Bot {
     private final static Timer randomTimer = new Timer("RandomTimer");*/
 
     public static void main(String[] args) throws IOException {
-        TELEGRAM_API.telegramAddListener();
+        //TELEGRAM_API.telegramAddListener();
+
         initializeVariables();
         INST_API.start();
+        ConsoleHandler.run();
         /*updatePosts.schedule(timerPosts, Constants.postUpdateInitialDelay);
         updateStories.schedule(timerStories, Constants.storyUpdateInitialDelay);
         randomTimer.schedule(timerRandom, Constants.randomInitialDelay);*/
